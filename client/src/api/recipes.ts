@@ -1,0 +1,19 @@
+import { api } from './client';
+import { Recipe } from './types';
+
+export const recipeApi = {
+    // List all recipes, optionally filtered by query
+    list: (q?: string) => api.get<Recipe[]>(q ? `/api/recipes?q=${encodeURIComponent(q)}` : '/api/recipes'),
+
+    // Get a single recipe by ID
+    get: (id: string | number) => api.get<Recipe>(`/api/recipes/${id}`),
+
+    // Create a new recipe
+    create: (data: Partial<Recipe>) => api.post<Recipe>('/api/recipes', data),
+
+    // Update an existing recipe by ID
+    update: (id: string | number, data: Partial<Recipe>) => api.put<Recipe>(`/api/recipes/${id}`, data),
+
+    // Delete a recipe by ID
+    delete: (id: string | number) => api.delete<void>(`/api/recipes/${id}`),
+};
