@@ -6,20 +6,33 @@ export interface IngredientEntry {
     unit: string;
 }
 
-export interface RecipeSuggestion {
-    id: number;
+export interface Folder {
+    id: string;
     name: string;
-    ingredients: { name: string; quantity: number; unit: string }[];
-    image?: string | null;
+    createdAt: number;
+}
+
+export interface RecipeSuggestion {
+    id: string;
+    mealName: string;
+    ingredients: {
+        name: string;
+        quantity: number;
+        unit: string;
+    }[];
+    instructions: string[];
     cookTime?: number;
-    difficulty?: 'Easy' | 'Medium' | 'Hard';
-    instructions?: string[];
-    swaps?: { original: string; alternative: string }[];
+    difficulty?: string;
+    image?: string;
+    savedAt?: number;
+    missingIngredient?: IngredientEntry;
 }
 export interface Recipe {
     id: string;
+    folderId: string;
     mealName: string;
-    mealType: string;
+    instructions: string[];
+    cookTime?: number;
     date: string;
     ingredients: {
         name: string;
@@ -54,5 +67,4 @@ export interface PantryItem {
     name: string;
     quantity: number;
     unit: string;
-    expiryDate?: string; // Optional expiry date
 }

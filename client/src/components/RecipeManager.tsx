@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeftIcon, PlusIcon, TrashIcon, SearchIcon, CalendarIcon, EditIcon, XIcon, ImageIcon, PackageIcon, UtensilsIcon } from 'lucide-react';
+import { ArrowLeftIcon, PlusIcon, TrashIcon, SearchIcon, CalendarIcon, EditIcon, XIcon, ImageIcon, PackageIcon, UtensilsIcon, FolderIcon, ChevronRightIcon, HomeIcon, MoreVerticalIcon, FolderPlusIcon, PencilIcon, AlertCircleIcon } from 'lucide-react';
 import { usePantry } from '../contexts/PantryContext';
-import { IngredientEntry, Recipe } from '../api/types';
+import { IngredientEntry, Recipe, Folder } from '../api/types';
 
 interface RecipeManagerProps {
   onBack: () => void;
@@ -24,6 +24,15 @@ export function RecipeManager({
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showIngredientSelector, setShowIngredientSelector] = useState(false);
+  // Folders state
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [currentFolder, setCurrentFolder] = useState<Folder | null>(null);
+  const [showAddFolder, setShowAddFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
+  const [showFolderActions, setShowFolderActions] = useState<string | null>(null);
+  const [showDeleteFolderConfirmation, setShowDeleteFolderConfirmation] = useState(false);
+  const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
   const [currentIngredient, setCurrentIngredient] = useState<IngredientEntry>({
     name: '',
     quantity: 1,
@@ -33,23 +42,126 @@ export function RecipeManager({
     id: '',
     date: new Date().toISOString().split('T')[0],
     mealName: '',
-    mealType: 'dinner',
     ingredients: [],
     image: null,
+    folderId: '' as string,
+    instructions: [] as string[],
   });
+  // Load folders from localStorage
+  useEffect(() => {
+    const savedFolders = localStorage.getItem('recipeFolders');
+    if (savedFolders) {
+      try {
+        setFolders(JSON.parse(savedFolders));
+      } catch (e) {
+        console.error('Failed to parse folders', e);
+        // Initialize with default folders if parsing fails
+        initializeDefaultFolders();
+      }
+    } else {
+      // Initialize with default folders if none exist
+      initializeDefaultFolders();
+    }
+  }, []);
 
-  const mealTypes = [
-    { id: 'breakfast', label: 'Breakfast' },
-    { id: 'lunch', label: 'Lunch' },
-    { id: 'dinner', label: 'Dinner' },
-    { id: 'snack', label: 'Snack' },
-  ];
+  // Initialize default folders
+  const initializeDefaultFolders = () => {
+    const defaultFolders = [{
+      id: 'uncategorized',
+      name: 'Uncategorized',
+      createdAt: Date.now()
+    }, {
+      id: 'favorites',
+      name: 'Favorites',
+      createdAt: Date.now()
+    }, {
+      id: 'breakfast',
+      name: 'Breakfast',
+      createdAt: Date.now()
+    }, {
+      id: 'lunch',
+      name: 'Lunch',
+      createdAt: Date.now()
+    }, {
+      id: 'dinner',
+      name: 'Dinner',
+      createdAt: Date.now()
+    }];
+    setFolders(defaultFolders);
+    localStorage.setItem('recipeFolders', JSON.stringify(defaultFolders));
+  };
+
+  // Save folders to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('recipeFolders', JSON.stringify(folders));
+  }, [folders]);
+
+  // Add folder to recipe if it doesn't exist
+  useEffect(() => {
+    // Check if recipes have folderId and update them if they don't
+    const recipesWithoutFolder = storedRecipes.filter(recipe => !recipe.folderId);
+    if (recipesWithoutFolder.length > 0) {
+      recipesWithoutFolder.forEach(recipe => {
+        // Default to uncategorized folder
+        updateRecipe({
+          ...recipe,
+          folderId: 'uncategorized'
+        });
+      });
+    }
+  }, [storedRecipes]);
 
   // Filter recipes based on search query
   const filteredRecipes = storedRecipes.filter(recipe => {
+    if (currentFolder && recipe.folderId !== currentFolder.id) {
+      return false;
+    }
     const matchesSearch = recipe.ingredients && recipe.ingredients.some(item => item.name && item.name.toLowerCase().includes(searchQuery.toLowerCase())) || recipe.mealName && recipe.mealName.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
+
+  // Handle creating a new folder
+  const handleCreateFolder = () => {
+    if (!newFolderName.trim()) return;
+    const newFolder: Folder = {
+      id: `folder-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      name: newFolderName.trim(),
+      createdAt: Date.now()
+    };
+    setFolders([...folders, newFolder]);
+    setNewFolderName('');
+    setShowAddFolder(false);
+  };
+  // Handle updating a folder
+  const handleUpdateFolder = () => {
+    if (!editingFolder || !newFolderName.trim()) return;
+    const updatedFolders = folders.map(folder => folder.id === editingFolder.id ? {
+      ...folder,
+      name: newFolderName.trim()
+    } : folder);
+    setFolders(updatedFolders);
+    setEditingFolder(null);
+    setNewFolderName('');
+  };
+  // Handle deleting a folder
+  const handleDeleteFolder = () => {
+    if (!folderToDelete) return;
+    // Move all recipes in this folder to Uncategorized
+    storedRecipes.filter(recipe => recipe.folderId === folderToDelete.id).forEach(recipe => {
+      updateRecipe({
+        ...recipe,
+        folderId: 'uncategorized'
+      });
+    });
+    // Remove the folder
+    setFolders(folders.filter(folder => folder.id !== folderToDelete.id));
+    setFolderToDelete(null);
+    setShowDeleteFolderConfirmation(false);
+    // If current folder is deleted, go back to folder list
+    if (currentFolder && currentFolder.id === folderToDelete.id) {
+      setCurrentFolder(null);
+    }
+  };
 
   const handleSelectPantryItem = (item: any) => {
     setCurrentIngredient({
@@ -170,14 +282,19 @@ export function RecipeManager({
       setSelectedRecipe(null);
       setIsEditing(false);
     } else {
-      addRecipe(newRecipe);
+      const recipeToAdd = {
+        ...newRecipe,
+        folderId: newRecipe.folderId || (currentFolder ? currentFolder.id : 'uncategorized')
+      };
+      addRecipe(recipeToAdd);
       setNewRecipe({
         id: '',
         date: new Date().toISOString().split('T')[0],
         mealName: '',
-        mealType: 'dinner',
         ingredients: [],
         image: null,
+        folderId: currentFolder ? currentFolder.id : 'uncategorized',
+        instructions: [] as string[],
       });
       setShowAddRecipe(false);
     }
@@ -213,20 +330,13 @@ export function RecipeManager({
     fetchAllRecipes();
   }, []);
 
-  // Get meal type label
-  const getMealTypeLabel = (type: string) => {
-    switch (type) {
-      case 'breakfast':
-        return 'Breakfast';
-      case 'lunch':
-        return 'Lunch';
-      case 'dinner':
-        return 'Dinner';
-      case 'snack':
-        return 'Snack';
-      default:
-        return 'Meal';
-    }
+  // Handle starting to add a recipe from a folder
+  const handleAddRecipeInFolder = (folder: Folder) => {
+    setNewRecipe({
+      ...newRecipe,
+      folderId: folder.id
+    });
+    setShowAddRecipe(true);
   };
 
   return <div className="flex flex-col w-full min-h-screen bg-gray-50">
@@ -243,61 +353,155 @@ export function RecipeManager({
     {/* Main Content */}
     <main className="flex-1 container mx-auto p-5">
       {!showAddRecipe && !selectedRecipe ? <>
-        {/* Search Bar */}
-        <div className="relative mb-6">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <SearchIcon size={18} className="text-gray-400" />
+        {/* Breadcrumb Navigation */}
+        <div className="flex items-center mb-4 text-sm">
+          <button onClick={() => setCurrentFolder(null)} className="flex items-center text-gray-600 hover:text-gray-900">
+            <HomeIcon size={16} className="mr-1" />
+            <span>Categories</span>
+          </button>
+          {currentFolder && <>
+            <ChevronRightIcon size={16} className="mx-2 text-gray-400" />
+            <span className="text-gray-800 font-medium">
+              {currentFolder.name}
+            </span>
+          </>}
+        </div>
+        {/* Folder View */}
+        {!currentFolder ? <div>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-gray-800">
+              Recipe Categories
+            </h2>
+            <button onClick={() => {
+              setNewFolderName('');
+              setShowAddFolder(true);
+            }} className="flex items-center text-sm bg-red-50 text-red-600 px-3 py-1.5 rounded-lg border border-red-100 hover:bg-red-100 transition-colors">
+              <FolderPlusIcon size={16} className="mr-1" />
+              New Category
+            </button>
           </div>
-          <input type="text" placeholder="Search recipes..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" />
-        </div>
-        {/* Add New Recipe Button */}
-        <button onClick={() => setShowAddRecipe(true)} className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-medium py-3 px-4 rounded-xl mb-6 shadow-sm transition-colors">
-          <PlusIcon size={18} />
-          <span>Add New Recipe</span>
-        </button>
-        {/* Recipes List */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          {filteredRecipes.length === 0 ? <div className="p-6 text-center">
-            <p className="text-gray-500">No recipes found</p>
-            {searchQuery && <p className="text-gray-400 text-sm mt-1">
-              Try a different search term
-            </p>}
-          </div> : <ul className="divide-y divide-gray-100">
-            {filteredRecipes.map(recipe => <li key={recipe.id} className="p-4">
-              <div className="flex justify-between">
-                <div className="flex-1 cursor-pointer" onClick={() => {
-                  setSelectedRecipe(recipe);
-                  setIsEditing(false);
-                }}>
-                  <div className="flex items-center mb-1">
-                    <UtensilsIcon size={16} className="text-red-500 mr-2" />
-                    <h3 className="font-medium text-gray-800">
-                      {recipe.mealName}{' '}
-                      <span className="text-sm text-gray-500">
-                        ({getMealTypeLabel(recipe.mealType)})
-                      </span>
-                    </h3>
-                    {recipe.image && <ImageIcon size={16} className="ml-2 text-gray-400" />}
-                  </div>
-                  <p className="text-gray-500 text-sm">
-                    {new Date(recipe.date).toLocaleDateString()}
-                  </p>
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            {folders.map(folder => <div key={folder.id} className="relative bg-white rounded-xl border border-gray-200 shadow-sm  hover:shadow-md transition-shadow">
+              <div className="p-4 cursor-pointer" onClick={() => setCurrentFolder(folder)}>
+                <div className="flex items-center mb-2">
+                  <FolderIcon size={20} className="text-amber-500 mr-2" />
+                  <h3 className="font-medium text-gray-800">
+                    {folder.name}
+                  </h3>
                 </div>
-                <div className="flex flex-col space-y-2">
-                  <button onClick={() => {
-                    setSelectedRecipe(recipe);
-                    setIsEditing(true);
-                  }} className="p-1.5 rounded-full hover:bg-blue-50 text-blue-600" aria-label="Edit recipe">
-                    <EditIcon size={18} />
-                  </button>
-                  <button onClick={() => deleteRecipe(recipe.id)} className="p-1.5 rounded-full hover:bg-red-50 text-red-500" aria-label="Delete recipe">
-                    <TrashIcon size={18} />
-                  </button>
-                </div>
+                <p className="text-sm text-gray-500">
+                  {storedRecipes.filter(r => r.folderId === folder.id).length}{' '}
+                  recipes
+                </p>
               </div>
-            </li>)}
-          </ul>}
-        </div>
+              {/* Folder actions */}
+              <div className="absolute top-2 right-2">
+                <button onClick={e => {
+                  e.stopPropagation();
+                  setShowFolderActions(showFolderActions === folder.id ? null : folder.id);
+                }} className="p-1 rounded-full hover:bg-gray-100">
+                  <MoreVerticalIcon size={16} className="text-gray-500" />
+                </button>
+                {showFolderActions === folder.id && <div className="absolute right-0 mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                  <button onClick={e => {
+                    e.stopPropagation();
+                    setEditingFolder(folder);
+                    setNewFolderName(folder.name);
+                    setShowFolderActions(null);
+                  }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center" disabled={folder.id === 'uncategorized'}>
+                    <PencilIcon size={14} className="mr-2" />
+                    Rename
+                  </button>
+                  <button onClick={e => {
+                    e.stopPropagation();
+                    handleAddRecipeInFolder(folder);
+                    setShowFolderActions(null);
+                  }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
+                    <PlusIcon size={14} className="mr-2" />
+                    Add Recipe
+                  </button>
+                  {folder.id !== 'uncategorized' && <button onClick={e => {
+                    e.stopPropagation();
+                    setFolderToDelete(folder);
+                    setShowDeleteFolderConfirmation(true);
+                    setShowFolderActions(null);
+                  }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center">
+                    <TrashIcon size={14} className="mr-2" />
+                    Delete
+                  </button>}
+                </div>}
+              </div>
+              {/* Quick add recipe button */}
+              <div className="absolute bottom-2 right-2">
+                <button onClick={e => {
+                  e.stopPropagation();
+                  handleAddRecipeInFolder(folder);
+                }} className="p-1 rounded-full bg-red-50 hover:bg-red-100 text-red-600" aria-label="Add recipe">
+                  <PlusIcon size={16} />
+                </button>
+              </div>
+            </div>)}
+          </div>
+        </div> : <>
+          {/* Search Bar */}
+          <div className="relative mb-6">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <SearchIcon size={18} className="text-gray-400" />
+            </div>
+            <input type="text" placeholder="Search recipes..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" />
+          </div>
+          {/* Add New Recipe Button */}
+          <button onClick={() => {
+            setNewRecipe({
+              ...newRecipe,
+              folderId: currentFolder.id
+            });
+            setShowAddRecipe(true);
+          }} className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-medium py-3 px-4 rounded-xl mb-6 shadow-sm transition-colors">
+            <PlusIcon size={18} />
+            <span>Add New Recipe</span>
+          </button>
+          {/* Recipes List */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            {filteredRecipes.length === 0 ? <div className="p-6 text-center">
+              <p className="text-gray-500">No recipes found</p>
+              {searchQuery && <p className="text-gray-400 text-sm mt-1">
+                Try a different search term
+              </p>}
+            </div> : <ul className="divide-y divide-gray-100">
+              {filteredRecipes.map(recipe => <li key={recipe.id} className="p-4">
+                <div className="flex justify-between">
+                  <div className="flex-1 cursor-pointer" onClick={() => {
+                    setSelectedRecipe(recipe);
+                    setIsEditing(false);
+                  }}>
+                    <div className="flex items-center mb-1">
+                      {recipe.image && <ImageIcon size={16} className="ml-2 text-gray-400" />}
+                    </div>
+                    <p className="text-gray-500 text-sm">
+                      {new Date(recipe.date).toLocaleDateString()}
+                    </p>
+                    <p className="text-gray-500 text-xs mt-1">
+                      {recipe.ingredients.length} ingredient
+                      {recipe.ingredients.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <button onClick={() => {
+                      setSelectedRecipe(recipe);
+                      setIsEditing(true);
+                    }} className="p-1.5 rounded-full hover:bg-blue-50 text-blue-600" aria-label="Edit recipe">
+                      <EditIcon size={18} />
+                    </button>
+                    <button onClick={() => deleteRecipe(recipe.id)} className="p-1.5 rounded-full hover:bg-red-50 text-red-500" aria-label="Delete recipe">
+                      <TrashIcon size={18} />
+                    </button>
+                  </div>
+                </div>
+              </li>)}
+            </ul>}
+          </div>
+        </>}
       </> : selectedRecipe ?
         // Recipe Detail View
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
@@ -340,21 +544,6 @@ export function RecipeManager({
                       mealName: e.target.value
                     })} className="w-full p-2 border border-gray-200 rounded-lg" placeholder="Meal name" />
                   </div>
-                </div>
-                {/* Meal Type */}
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-1">
-                    Meal Type
-                  </label>
-                  <select value={selectedRecipe.mealType} onChange={e => setSelectedRecipe({
-                    ...selectedRecipe,
-                    mealType: e.target.value as 'breakfast' | 'lunch' | 'dinner' | 'snack'
-                  })} className="w-full p-2 border border-gray-200 rounded-lg">
-                    <option value="breakfast">Breakfast</option>
-                    <option value="lunch">Lunch</option>
-                    <option value="dinner">Dinner</option>
-                    <option value="snack">Snack</option>
-                  </select>
                 </div>
                 {/* Recipe Image */}
                 <div>
@@ -420,12 +609,6 @@ export function RecipeManager({
                     <h3 className="font-bold text-xl text-gray-800">
                       {selectedRecipe.mealName}
                     </h3>
-                    <div className="flex items-center text-red-600 mt-1">
-                      <UtensilsIcon size={16} className="mr-1" />
-                      <span>
-                        {getMealTypeLabel(selectedRecipe.mealType)}
-                      </span>
-                    </div>
                     <p className="text-gray-500 mt-1">
                       {new Date(selectedRecipe.date).toLocaleDateString()}
                     </p>
@@ -491,18 +674,6 @@ export function RecipeManager({
                   <input type="date" id="meal-date" value={newRecipe.date} onChange={e => setNewRecipe({ ...newRecipe, date: e.target.value })} className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" />
                 </div>
               </div>
-
-              <div>
-                <label htmlFor="meal-type" className="block text-gray-700 mb-2">
-                  Meal Type
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {mealTypes.map(type => <button key={type.id} type="button" onClick={() => setNewRecipe({ ...newRecipe, mealType: type.id as 'breakfast' | 'lunch' | 'dinner' | 'snack' })} className={`py-3 px-4 rounded-xl border ${newRecipe.mealType === type.id ? 'bg-red-50 border-red-200 text-red-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'} transition-colors`}>
-                    {type.label}
-                  </button>)}
-                </div>
-              </div>
-
               {/* Image Upload Section */}
               <div>
                 <label className="block text-gray-700 mb-2">
@@ -626,6 +797,58 @@ export function RecipeManager({
             </button>
             <button onClick={handleAddIngredient} disabled={!currentIngredient.name} className={`w-1/2 ${currentIngredient.name ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} py-2 rounded-lg`}>
               Add Ingredient
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>}
+    {/* Edit Folder Modal */}
+    {editingFolder && <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl shadow-lg max-w-sm w-full">
+        <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+          <h3 className="font-medium text-gray-800">Rename Category</h3>
+          <button onClick={() => setEditingFolder(null)} className="p-1 rounded-full hover:bg-gray-100">
+            <XIcon size={20} className="text-gray-500" />
+          </button>
+        </div>
+        <div className="p-6">
+          <div className="mb-4">
+            <label htmlFor="folder-name-edit" className="block text-gray-700 mb-2">
+              Category Name
+            </label>
+            <input type="text" id="folder-name-edit" value={newFolderName} onChange={e => setNewFolderName(e.target.value)} placeholder="Enter category name" className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" />
+          </div>
+          <div className="flex gap-2 pt-2">
+            <button onClick={() => setEditingFolder(null)} className="w-1/2 bg-gray-100 text-gray-700 py-2 rounded-lg">
+              Cancel
+            </button>
+            <button onClick={handleUpdateFolder} disabled={!newFolderName.trim()} className={`w-1/2 ${newFolderName.trim() ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'} py-2 rounded-lg`}>
+              Update
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>}
+    {/* Delete Folder Confirmation Modal */}
+    {showDeleteFolderConfirmation && <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl shadow-lg max-w-sm w-full">
+        <div className="p-6">
+          <div className="flex items-center text-red-600 mb-4">
+            <AlertCircleIcon size={24} className="mr-2" />
+            <h3 className="text-lg font-medium">Delete Category</h3>
+          </div>
+          <p className="text-gray-600 mb-2">
+            Are you sure you want to delete "{folderToDelete?.name}"?
+          </p>
+          <p className="text-gray-500 text-sm mb-6">
+            All recipes in this category will be moved to "Uncategorized".
+          </p>
+          <div className="flex justify-end gap-3">
+            <button onClick={() => setShowDeleteFolderConfirmation(false)} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">
+              Cancel
+            </button>
+            <button onClick={handleDeleteFolder} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+              Delete
             </button>
           </div>
         </div>

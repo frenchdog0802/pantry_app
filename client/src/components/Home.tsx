@@ -35,9 +35,9 @@ export function Home({
       <div className="container mx-auto flex justify-between items-center">
         <h1 className="text-2xl font-bold">OrganizEat</h1>
         <div className="flex items-center">
-          <button onClick={onViewCalendar} className="p-2 rounded-full hover:bg-white/20 transition-colors mr-2" aria-label="View Calendar">
+          {/* <button onClick={onViewCalendar} className="p-2 rounded-full hover:bg-white/20 transition-colors mr-2" aria-label="View Calendar">
             <CalendarIcon size={24} />
-          </button>
+          </button> */}
           <button onClick={onSettings} className="p-2 rounded-full hover:bg-white/20 transition-colors" aria-label="Settings">
             <SettingsIcon size={24} />
           </button>
@@ -77,11 +77,11 @@ export function Home({
       </div>
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-4 mb-8">
-        <button onClick={onQuickLog} className="flex flex-col items-center justify-center p-5 bg-red-50 rounded-xl border border-red-100 hover:bg-red-100 transition-colors">
+        <button onClick={onViewCalendar} className="flex flex-col items-center justify-center p-5 bg-red-50 rounded-xl border border-red-100 hover:bg-red-100 transition-colors">
           <ClipboardListIcon size={32} className="text-red-600 mb-3" />
-          <span className="text-gray-800 font-medium">Quick Log</span>
+          <span className="text-gray-800 font-medium">Plan Your Meals</span>
           <span className="text-xs text-gray-500 mt-1">
-            Record what you cooked
+            Schedule dishes on your calendar
           </span>
         </button>
         {/* <button onClick={onManagePantry} className="flex flex-col items-center justify-center p-5 bg-amber-50 rounded-xl border border-amber-100 hover:bg-amber-100 transition-colors">
