@@ -1,15 +1,10 @@
 import React, { useState, createContext, useContext } from 'react';
 import { initialPantryItems } from '../utils/pantryData';
-import { PantryItem, CookingHistoryItem, ShoppingListItem, Recipe, RecipeSuggestion } from '../api/types';
+import { PantryItem, CookingHistoryItem, ShoppingListItem, Recipe, RecipeSuggestion, Folder, UserSettings } from '../api/types';
 import { recipeSuggestions } from '../utils/recipeData';
 import { recipeApi } from '../api/recipes';
-interface UserSettings {
-  name: string;
-  language: string;
-  measurementUnit: string;
-}
+import { folderApi } from '../api/folder';
 interface PantryContextType {
-  recipeSuggestions: RecipeSuggestion[];
   pantryItems: PantryItem[];
   cookingHistory: CookingHistoryItem[];
   shoppingList: ShoppingListItem[];
@@ -24,6 +19,11 @@ interface PantryContextType {
   deleteRecipe: (id: string) => void;
   userSettings: UserSettings;
   updateUserSettings: (settings: UserSettings) => void;
+  folders: Folder[];
+  fetchAllFolders: () => void;
+  addFolder: (folder: Omit<Folder, 'id'>) => void;
+  deleteFolder: (id: string) => void;
+  updateFolder: (folder: Folder) => void;
 }
 
 const PantryContext = createContext<PantryContextType | undefined>(undefined);
@@ -32,17 +32,58 @@ export function PantryProvider({
 }: {
   children: React.ReactNode;
 }) {
-
+  const [folders, setFolders] = useState<Folder[]>([]);
   const [pantryItems, setPantryItems] = useState<PantryItem[]>(initialPantryItems);
   const [cookingHistory, setCookingHistory] = useState<CookingHistoryItem[]>([]);
   const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>([]);
-  const [recipeSuggestion, setRecipeSuggestion] = useState<RecipeSuggestion[]>(recipeSuggestions);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [userSettings, setUserSettings] = useState<UserSettings>({
     name: '',
     language: 'english',
     measurementUnit: 'metric'
   });
+  const fetchAllFolders = async () => {
+    try {
+      const fetchedFolders = await folderApi.list();
+      setFolders(fetchedFolders);
+    } catch (err) {
+      console.error('Fetch folders failed:', err);
+    }
+  };
+
+  const addFolder = async (folder: Omit<Folder, 'id'>) => {
+    // temporary folder for optimistic UI
+    const tempFolder: Folder = {
+      ...folder,
+      id: `folder-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+    };
+
+    setFolders(prev => [...prev, tempFolder]);
+
+    try {
+      const savedFolder = await folderApi.create(folder);
+
+      // replace temp with the one from backend
+      setFolders(prev =>
+        prev.map(f => (f.id === tempFolder.id ? savedFolder : f))
+      );
+    } catch (err) {
+      console.error('Insert folder failed:', err);
+      // rollback if needed
+      setFolders(prev => prev.filter(f => f.id !== tempFolder.id));
+    }
+  };
+  const deleteFolder = (id: string) => {
+    setFolders(prev => prev.filter(f => f.id !== id));
+    folderApi.delete(id);
+  };
+
+  const updateFolder = (folder: Folder) => {
+    setFolders(prev => prev.map(f => f.id === folder.id ? folder : f));
+    folderApi.update(folder.id, folder);
+  };
+
+
   const updatePantryItems = (items: PantryItem[]) => {
     setPantryItems(items);
   };
@@ -116,7 +157,6 @@ export function PantryProvider({
     pantryItems,
     cookingHistory,
     shoppingList,
-    recipeSuggestions,
     updatePantryItems,
     addToCookingHistory,
     addToShoppingList,
@@ -126,7 +166,12 @@ export function PantryProvider({
     updateRecipe,
     deleteRecipe,
     userSettings,
-    updateUserSettings
+    updateUserSettings,
+    folders,
+    fetchAllFolders,
+    addFolder,
+    deleteFolder,
+    updateFolder
   }}>
     {children}
   </PantryContext.Provider>;

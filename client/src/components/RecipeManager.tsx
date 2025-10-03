@@ -17,6 +17,11 @@ export function RecipeManager({
     deleteRecipe,
     updatePantryItems,
     fetchAllRecipes,
+    fetchAllFolders,
+    addFolder,
+    deleteFolder,
+    updateFolder,
+    folders: savedFolders,
     pantryItems
   } = usePantry();
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,52 +54,48 @@ export function RecipeManager({
   });
   // Load folders from localStorage
   useEffect(() => {
-    const savedFolders = localStorage.getItem('recipeFolders');
-    if (savedFolders) {
-      try {
-        setFolders(JSON.parse(savedFolders));
-      } catch (e) {
-        console.error('Failed to parse folders', e);
-        // Initialize with default folders if parsing fails
-        initializeDefaultFolders();
-      }
-    } else {
+    fetchAllRecipes();
+    fetchAllFolders();
+    // const savedFolders = localStorage.getItem('recipeFolders');
+    if (!savedFolders) {
       // Initialize with default folders if none exist
       initializeDefaultFolders();
     }
   }, []);
+
 
   // Initialize default folders
   const initializeDefaultFolders = () => {
     const defaultFolders = [{
       id: 'uncategorized',
       name: 'Uncategorized',
+      icon: 'FolderIcon',
       createdAt: Date.now()
     }, {
       id: 'favorites',
       name: 'Favorites',
+      icon: 'FolderIcon',
       createdAt: Date.now()
     }, {
       id: 'breakfast',
       name: 'Breakfast',
+      icon: 'FolderIcon',
       createdAt: Date.now()
     }, {
       id: 'lunch',
       name: 'Lunch',
+      icon: 'FolderIcon',
       createdAt: Date.now()
     }, {
       id: 'dinner',
       name: 'Dinner',
+      icon: 'FolderIcon',
       createdAt: Date.now()
     }];
     setFolders(defaultFolders);
-    localStorage.setItem('recipeFolders', JSON.stringify(defaultFolders));
+    // localStorage.setItem('recipeFolders', JSON.stringify(defaultFolders));
   };
 
-  // Save folders to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('recipeFolders', JSON.stringify(folders));
-  }, [folders]);
 
   // Add folder to recipe if it doesn't exist
   useEffect(() => {
@@ -126,11 +127,13 @@ export function RecipeManager({
     const newFolder: Folder = {
       id: `folder-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       name: newFolderName.trim(),
+      icon: 'FolderIcon',
       createdAt: Date.now()
     };
     setFolders([...folders, newFolder]);
     setNewFolderName('');
     setShowAddFolder(false);
+    addFolder(newFolder);
   };
   // Handle updating a folder
   const handleUpdateFolder = () => {
@@ -142,6 +145,7 @@ export function RecipeManager({
     setFolders(updatedFolders);
     setEditingFolder(null);
     setNewFolderName('');
+    updateFolder({ ...editingFolder, name: newFolderName.trim() });
   };
   // Handle deleting a folder
   const handleDeleteFolder = () => {
@@ -161,6 +165,7 @@ export function RecipeManager({
     if (currentFolder && currentFolder.id === folderToDelete.id) {
       setCurrentFolder(null);
     }
+    deleteFolder(folderToDelete.id);
   };
 
   const handleSelectPantryItem = (item: any) => {
@@ -326,9 +331,6 @@ export function RecipeManager({
 
   const filteredPantryItems = pantryItems.filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  useEffect(() => {
-    fetchAllRecipes();
-  }, []);
 
   // Handle starting to add a recipe from a folder
   const handleAddRecipeInFolder = (folder: Folder) => {
@@ -797,6 +799,33 @@ export function RecipeManager({
             </button>
             <button onClick={handleAddIngredient} disabled={!currentIngredient.name} className={`w-1/2 ${currentIngredient.name ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} py-2 rounded-lg`}>
               Add Ingredient
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>}
+    {/* Add Folder Modal */}
+    {showAddFolder && <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl shadow-lg max-w-sm w-full">
+        <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+          <h3 className="font-medium text-gray-800">Create New Category</h3>
+          <button onClick={() => setShowAddFolder(false)} className="p-1 rounded-full hover:bg-gray-100">
+            <XIcon size={20} className="text-gray-500" />
+          </button>
+        </div>
+        <div className="p-6">
+          <div className="mb-4">
+            <label htmlFor="folder-name" className="block text-gray-700 mb-2">
+              Category Name
+            </label>
+            <input type="text" id="folder-name" value={newFolderName} onChange={e => setNewFolderName(e.target.value)} placeholder="Enter category name" className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" />
+          </div>
+          <div className="flex gap-2 pt-2">
+            <button onClick={() => setShowAddFolder(false)} className="w-1/2 bg-gray-100 text-gray-700 py-2 rounded-lg">
+              Cancel
+            </button>
+            <button onClick={handleCreateFolder} disabled={!newFolderName.trim()} className={`w-1/2 ${newFolderName.trim() ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'} py-2 rounded-lg`}>
+              Create
             </button>
           </div>
         </div>

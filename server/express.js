@@ -5,11 +5,10 @@ import compress from "compression";
 import cors from "cors";
 import helmet from "helmet";
 import userRoutes from "./routes/user.routes.js";
-import newsRoutes from "./routes/news.routes.js";
 import authRoutes from "./routes/auth.routes.js";
-import historyRoutes from "./routes/history.route.js";
 import path from "path";
 import recipeRoutes from "./routes/recipe.routes.js";
+import folderRoutes from "./routes/folder.routet.js";
 
 
 
@@ -23,9 +22,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/news", newsRoutes);
-app.use("/api/history", historyRoutes);
-app.use("/api/recipes", recipeRoutes);
+app.use("/api/recipe", recipeRoutes);
+app.use("/api/folder", folderRoutes);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());

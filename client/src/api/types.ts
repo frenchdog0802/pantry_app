@@ -1,5 +1,11 @@
 export type User = { id: string; email: string; name: string; token?: string };
 
+export interface UserSettings {
+    name: string;
+    language: string;
+    measurementUnit: string;
+}
+
 export interface IngredientEntry {
     name: string;
     quantity: number;
@@ -9,6 +15,7 @@ export interface IngredientEntry {
 export interface Folder {
     id: string;
     name: string;
+    icon: string;
     createdAt: number;
 }
 
