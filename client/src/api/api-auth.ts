@@ -1,6 +1,6 @@
 // src/api/auth.ts
-import { api } from './client';
-import type { User } from './types';
+import { api } from './Client';
+import type { User } from './Types';
 
 // Signin function
 const signin = async (user: User) => {

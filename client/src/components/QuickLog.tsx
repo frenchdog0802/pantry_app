@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { ArrowLeftIcon, CheckIcon, XIcon, PlusIcon, TrashIcon, SearchIcon, CalendarIcon, ImageIcon, CookingPot } from 'lucide-react';
 import { usePantry } from '../contexts/PantryContext';
-import { IngredientEntry } from '../api/types';
+import { IngredientEntry } from '../api/Types';
 interface QuickLogProps {
   onBack: () => void;
   onNavigateToRecipes: () => void;

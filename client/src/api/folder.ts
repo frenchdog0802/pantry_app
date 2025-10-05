@@ -1,5 +1,5 @@
-import { api } from './client';
-import { Folder } from './types';
+import { api } from './Client';
+import { Folder } from './Types';
 
 export const folderApi = {
     // List all folders, optionally filtered by query

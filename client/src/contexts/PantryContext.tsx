@@ -1,6 +1,6 @@
 import React, { useState, createContext, useContext } from 'react';
 import { initialPantryItems } from '../utils/pantryData';
-import { PantryItem, CookingHistoryItem, ShoppingListItem, Recipe, RecipeSuggestion, Folder, UserSettings } from '../api/types';
+import { PantryItem, CookingHistoryItem, ShoppingListItem, Recipe, RecipeSuggestion, Folder, UserSettings } from '../api/Types';
 import { recipeSuggestions } from '../utils/recipeData';
 import { recipeApi } from '../api/recipes';
 import { folderApi } from '../api/folder';
@@ -51,11 +51,11 @@ export function PantryProvider({
     }
   };
 
-  const addFolder = async (folder: Omit<Folder, 'id'>) => {
+  const addFolder = async (folder: Omit<Folder, 'id'>, userId: string) => {
     // temporary folder for optimistic UI
     const tempFolder: Folder = {
       ...folder,
-      id: `folder-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+      id: `folder-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     };
 
     setFolders(prev => [...prev, tempFolder]);

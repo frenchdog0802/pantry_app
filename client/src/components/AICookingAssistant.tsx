@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { ArrowLeftIcon, SendIcon, SaveIcon, RefreshCwIcon, ThumbsUpIcon, ShoppingCartIcon, ChevronRightIcon, FolderIcon, XIcon, ChevronDownIcon, MessageSquareIcon, PlusCircleIcon, SearchIcon } from 'lucide-react';
 import { usePantry } from '../contexts/PantryContext';
-import { IngredientEntry, PantryItem, Recipe, RecipeSuggestion } from '../api/types';
+import { IngredientEntry, PantryItem, Recipe, RecipeSuggestion } from '../api/Types';
 interface AICookingAssistantProps {
   onBack: () => void;
 }

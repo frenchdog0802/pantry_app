@@ -1,4 +1,4 @@
-import { PantryItem } from '../api/types';
+import { PantryItem } from '../api/Types';
 export const initialPantryItems: PantryItem[] = [{
   name: "eggs",
   quantity: 6,

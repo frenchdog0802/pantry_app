@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeftIcon, PlusIcon, TrashIcon, SearchIcon, CalendarIcon, EditIcon, XIcon, ImageIcon, PackageIcon, UtensilsIcon, FolderIcon, ChevronRightIcon, HomeIcon, MoreVerticalIcon, FolderPlusIcon, PencilIcon, AlertCircleIcon } from 'lucide-react';
 import { usePantry } from '../contexts/PantryContext';
-import { IngredientEntry, Recipe, Folder } from '../api/types';
+import { useAuth } from '../contexts/AuthContext';
+import { IngredientEntry, Recipe, Folder } from '../api/Types';
 
 interface RecipeManagerProps {
   onBack: () => void;
@@ -24,13 +25,15 @@ export function RecipeManager({
     folders: savedFolders,
     pantryItems
   } = usePantry();
+
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddRecipe, setShowAddRecipe] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showIngredientSelector, setShowIngredientSelector] = useState(false);
   // Folders state
-  const [folders, setFolders] = useState<Folder[]>([]);
+  const [folders, setFolders] = useState<Folder[]>(savedFolders);
   const [currentFolder, setCurrentFolder] = useState<Folder | null>(null);
   const [showAddFolder, setShowAddFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
@@ -56,12 +59,15 @@ export function RecipeManager({
   useEffect(() => {
     fetchAllRecipes();
     fetchAllFolders();
-    // const savedFolders = localStorage.getItem('recipeFolders');
-    if (!savedFolders) {
-      // Initialize with default folders if none exist
+  }, []);
+
+  useEffect(() => {
+    setFolders(savedFolders);
+    // If no folders exist, initialize default ones
+    if (savedFolders.length === 0) {
       initializeDefaultFolders();
     }
-  }, []);
+  }, [savedFolders]);
 
 
   // Initialize default folders
@@ -93,6 +99,7 @@ export function RecipeManager({
       createdAt: Date.now()
     }];
     setFolders(defaultFolders);
+    defaultFolders.forEach(folder => addFolder(folder));
     // localStorage.setItem('recipeFolders', JSON.stringify(defaultFolders));
   };
 
@@ -130,7 +137,7 @@ export function RecipeManager({
       icon: 'FolderIcon',
       createdAt: Date.now()
     };
-    setFolders([...folders, newFolder]);
+    setFolders([...(folders ?? []), newFolder]);
     setNewFolderName('');
     setShowAddFolder(false);
     addFolder(newFolder);
@@ -138,7 +145,7 @@ export function RecipeManager({
   // Handle updating a folder
   const handleUpdateFolder = () => {
     if (!editingFolder || !newFolderName.trim()) return;
-    const updatedFolders = folders.map(folder => folder.id === editingFolder.id ? {
+    const updatedFolders = (folders ?? []).map(folder => folder.id === editingFolder.id ? {
       ...folder,
       name: newFolderName.trim()
     } : folder);
@@ -158,7 +165,7 @@ export function RecipeManager({
       });
     });
     // Remove the folder
-    setFolders(folders.filter(folder => folder.id !== folderToDelete.id));
+    setFolders((folders ?? []).filter(folder => folder.id !== folderToDelete.id));
     setFolderToDelete(null);
     setShowDeleteFolderConfirmation(false);
     // If current folder is deleted, go back to folder list
@@ -383,7 +390,7 @@ export function RecipeManager({
             </button>
           </div>
           <div className="grid grid-cols-2 gap-4 mb-6">
-            {folders.map(folder => <div key={folder.id} className="relative bg-white rounded-xl border border-gray-200 shadow-sm  hover:shadow-md transition-shadow">
+            {(folders ?? []).map(folder => <div key={folder.id} className="relative bg-white rounded-xl border border-gray-200 shadow-sm  hover:shadow-md transition-shadow">
               <div className="p-4 cursor-pointer" onClick={() => setCurrentFolder(folder)}>
                 <div className="flex items-center mb-2">
                   <FolderIcon size={20} className="text-amber-500 mr-2" />

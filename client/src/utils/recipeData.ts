@@ -1,4 +1,4 @@
-import { RecipeSuggestion } from '../api/types';
+import { RecipeSuggestion } from '../api/Types';
 export const recipeSuggestions: RecipeSuggestion[] = [{
   id: 1,
   name: "Spaghetti Aglio e Olio",
