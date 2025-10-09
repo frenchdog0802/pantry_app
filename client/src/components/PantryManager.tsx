@@ -1,93 +1,162 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeftIcon, PlusIcon, MinusIcon, TrashIcon, SearchIcon, CalendarIcon, AlertTriangleIcon, PackageIcon, ShoppingCartIcon, CheckIcon } from 'lucide-react';
 import { usePantry } from '../contexts/PantryContext';
+import { PantryItem } from '../api/Types';
 interface PantryManagerProps {
   onBack: () => void;
-  onShoppingList: () => void;
-  onManagePantry: () => void;
+  onManagePantry: (activeTabParam: string) => void;
+  activeTabParam?: string;
 }
 export function PantryManager({
   onBack,
-  onShoppingList,
-  onManagePantry
+  onManagePantry,
+  activeTabParam
 }: PantryManagerProps) {
   const {
     pantryItems,
-    updatePantryItems,
+    updatePantryItem,
+    addPantryItem,
+    removePantryItem,
     shoppingList,
+    ingredients,
+    fetchAllIngredients,
     updateShoppingList
   } = usePantry();
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [newItem, setNewItem] = useState({
     name: '',
     quantity: 1,
     unit: '',
-    expiryDate: ''
   });
   const [newShoppingItem, setNewShoppingItem] = useState({
     name: '',
     quantity: 1,
     unit: ''
   });
+  const [filteredIngredients, setFilteredIngredients] = useState<typeof pantryItems>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [isAddingShoppingItem, setIsAddingShoppingItem] = useState(false);
-  const [activeTab, setActiveTab] = useState('current'); // 'current', 'expiring', or 'shopping'
+  const [activeTab, setActiveTab] = useState(activeTabParam); // 'inventory' or 'shopping'
   const [shoppingSearchQuery, setShoppingSearchQuery] = useState('');
   // Count items that need to be bought (in shopping list)
   const itemsToBuy = shoppingList.filter(item => !item.purchased).length;
   // Filter pantry items based on search query and active tab
   const filteredItems = pantryItems.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+    // if is not english dont toLowerCase, but if is english do toLowerCase
+    const isEnglish = /^[\x00-\x7F]*$/.test(item.name);
+    const matchesSearch = isEnglish
+      ? item.name.toLowerCase().includes(searchQuery.toLowerCase())
+      : item.name.includes(searchQuery);
     return matchesSearch;
   });
+
+
   // Filter shopping list items
-  const filteredShoppingItems = shoppingList.filter(item => item.name.toLowerCase().includes(shoppingSearchQuery.toLowerCase()));
+  const filteredShoppingItems = shoppingList.filter(item => {
+    const isEnglish = /^[\x00-\x7F]*$/.test(item.name);
+    return isEnglish
+      ? item.name.toLowerCase().includes(shoppingSearchQuery.toLowerCase())
+      : item.name.includes(shoppingSearchQuery);
+  });
   const handleUpdateQuantity = (itemName: string, amount: number) => {
-    const updatedItems = pantryItems.map(item => {
-      if (item.name === itemName) {
-        const newQuantity = Math.max(0, item.quantity + amount);
-        return {
-          ...item,
-          quantity: newQuantity
-        };
+    const item = pantryItems.find(item => item.name === itemName);
+    if (item) {
+      const newQuantity = item.quantity + amount;
+      if (newQuantity >= 0) {
+        updatePantryItem({ ...item, quantity: newQuantity });
       }
-      return item;
-    });
-    updatePantryItems(updatedItems);
+    }
   };
   const handleRemoveItem = (itemName: string) => {
-    const updatedItems = pantryItems.filter(item => item.name !== itemName);
-    updatePantryItems(updatedItems);
+    const item = pantryItems.find(item => item.name === itemName);
+    if (item && removePantryItem) {
+      removePantryItem(item.id);
+    }
   };
+
+  useEffect(() => {
+    const controller = new AbortController(); // 防止舊請求 race condition
+
+    if (newItem.name.trim() === "") {
+      setFilteredIngredients([]);
+      return;
+    }
+
+    const delayDebounce = setTimeout(async () => {
+      try {
+        setLoading(true);
+        fetchAllIngredients(newItem.name);
+
+        // combine pantry items with fetched ingredients for dropdown
+        const combined = [
+          ...pantryItems.filter(p => p.name.toLowerCase().includes(newItem.name.toLowerCase())),
+          ...ingredients
+            .filter(i => i.name.toLowerCase().includes(newItem.name.toLowerCase()) && !pantryItems.some(p => p.name === i.name))
+            .map(i => ({
+              id: i.id,
+              name: i.name,
+              quantity: i.quantity ?? 1,
+              unit: i.unit ?? ""
+            }))
+        ];
+        setFilteredIngredients(combined);
+
+      } catch (err) {
+        console.error('Error fetching ingredients:', err);
+        setFilteredIngredients([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 300); // 300ms debounce time
+
+    return () => {
+      clearTimeout(delayDebounce);
+      controller.abort();
+    };
+  }, [newItem.name]);
+
+
+  const handleSelectIngredient = (ingredient: PantryItem) => {
+    setNewItem({
+      ...newItem,
+      name: ingredient.name,
+      unit: ingredient.unit || "",
+      quantity: ingredient.quantity || 1
+    });
+    setShowDropdown(false);
+  };
+
   const handleAddItem = () => {
     if (!newItem.name.trim()) return;
     // Check if item already exists
     const existingItem = pantryItems.find(item => item.name.toLowerCase() === newItem.name.toLowerCase());
     if (existingItem) {
-      // Update quantity if item exists
-      const updatedItems = pantryItems.map(item => {
-        if (item.name.toLowerCase() === newItem.name.toLowerCase()) {
-          return {
-            ...item,
-            quantity: item.quantity + newItem.quantity,
-          };
-        }
-        return item;
-      });
-      updatePantryItems(updatedItems);
+      updatePantryItem({ ...existingItem, quantity: newItem.quantity });
     } else {
       // Add new item
-      updatePantryItems([...pantryItems, newItem]);
+      addPantryItem({ ...newItem });
     }
     // Reset form
     setNewItem({
       name: '',
       quantity: 1,
       unit: '',
-      expiryDate: ''
     });
     setIsAddingItem(false);
   };
+
+  const handleCancelAddItem = () => {
+    setNewItem({
+      name: '',
+      quantity: 1,
+      unit: '',
+    });
+    setFilteredIngredients([]);
+    setShowDropdown(false);
+    setIsAddingItem(false);
+  }
   // Shopping List Functions
   const handleAddShoppingItem = () => {
     if (!newShoppingItem.name.trim()) return;
@@ -133,14 +202,14 @@ export function PantryManager({
         }
         return pantryItem;
       });
-      updatePantryItems(updatedPantry);
+      // updatePantryItems(updatedPantry);
     } else {
       // Add new item to pantry
-      updatePantryItems([...pantryItems, {
-        name: item.name,
-        quantity: item.quantity,
-        unit: item.unit
-      }]);
+      // updatePantryItems([...pantryItems, {
+      //   name: item.name,
+      //   quantity: item.quantity,
+      //   unit: item.unit
+      // }]);
     }
     // Mark as purchased in shopping list
     const updatedList = shoppingList.map(listItem => listItem.id === item.id ? {
@@ -148,17 +217,6 @@ export function PantryManager({
       purchased: true
     } : listItem);
     updateShoppingList(updatedList);
-  };
-  // Calculate days until expiry
-  const getDaysUntilExpiry = (expiryDate: string) => {
-    if (!expiryDate) return null;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const expiry = new Date(expiryDate);
-    expiry.setHours(0, 0, 0, 0);
-    const diffTime = expiry.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
   };
   return <div className="flex flex-col w-full min-h-screen bg-gray-50">
     {/* Header */}
@@ -181,7 +239,7 @@ export function PantryManager({
           My Kitchen Stats
         </h3>
         <div className="grid grid-cols-2 gap-6">
-          <div className="bg-gray-50 p-5 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:bg-pink-50 hover:border-pink-100 transition-colors" onClick={onManagePantry}>
+          <div className="bg-gray-50 p-5 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:bg-pink-50 hover:border-pink-100 transition-colors" onClick={() => setActiveTab('inventory')}>
             <div className="text-3xl font-bold text-red-600 mb-1">
               {pantryItems.length}
             </div>
@@ -201,7 +259,7 @@ export function PantryManager({
 
       {/* Main Tabs */}
       <div className="flex mb-6 bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200">
-        <button onClick={() => setActiveTab('current')} className={`flex-1 py-3 px-4 font-medium ${activeTab === 'current' ? 'bg-red-50 text-red-600' : 'text-gray-700'}`}>
+        <button onClick={() => setActiveTab('inventory')} className={`flex-1 py-3 px-4 font-medium ${activeTab === 'inventory' ? 'bg-red-50 text-red-600' : 'text-gray-700'}`}>
           Inventory
         </button>
         <button onClick={() => setActiveTab('shopping')} className={`flex-1 py-3 px-4 font-medium ${activeTab === 'shopping' ? 'bg-blue-50 text-blue-600' : 'text-gray-700'}`}>
@@ -311,36 +369,81 @@ export function PantryManager({
             <span>Add New Item</span>
           </button> : <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6">
             <h3 className="font-medium text-gray-700 mb-3">Add New Item</h3>
-            <div className="space-y-3">
-              <input type="text" placeholder="Item name" value={newItem.name} onChange={e => setNewItem({
-                ...newItem,
-                name: e.target.value
-              })} className="w-full p-2 border border-gray-200 rounded-lg" />
-              <div className="flex gap-2">
-                <input type="number" min="1" value={newItem.quantity} onChange={e => setNewItem({
-                  ...newItem,
-                  quantity: parseInt(e.target.value) || 1
-                })} className="w-1/3 p-2 border border-gray-200 rounded-lg" />
-                <input type="text" placeholder="Unit (g, ml, etc.)" value={newItem.unit} onChange={e => setNewItem({
-                  ...newItem,
-                  unit: e.target.value
-                })} className="w-2/3 p-2 border border-gray-200 rounded-lg" />
-              </div>
-              {/* Expiry Date Input */}
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <CalendarIcon size={16} className="text-gray-400" />
+
+            <div className="space-y-3 relative">
+              <input
+                type="text"
+                placeholder="Search or add item name"
+                value={newItem.name}
+                onChange={(e) =>
+                  setNewItem({ ...newItem, name: e.target.value })
+                }
+                onFocus={() => setShowDropdown(true)}
+                className="w-full p-2 border border-gray-200 rounded-lg"
+              />
+
+              {showDropdown && filteredIngredients.length > 0 && (
+                <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                  {filteredIngredients.map((ingredient) => (
+                    <li
+                      key={ingredient.id}
+                      onClick={() => handleSelectIngredient(ingredient)}
+                      className="px-3 py-2 hover:bg-red-50 cursor-pointer text-gray-700"
+                    >
+                      {ingredient.name}{" "}
+                      <span className="text-sm text-gray-400">
+                        ({ingredient.unit})
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {loading && (
+                <div className="absolute bg-white text-gray-400 text-sm p-2 rounded-lg border w-full">
+                  Loading...
                 </div>
-                <input type="date" placeholder="Expiry date (optional)" value={newItem.expiryDate} onChange={e => setNewItem({
-                  ...newItem,
-                  expiryDate: e.target.value
-                })} className="w-full p-2 pl-10 border border-gray-200 rounded-lg" />
-              </div>
+              )}
+
+
               <div className="flex gap-2">
-                <button onClick={() => setIsAddingItem(false)} className="w-1/2 bg-gray-100 text-gray-700 py-2 rounded-lg">
+                <input
+                  type="number"
+                  min="1"
+                  value={newItem.quantity}
+                  onChange={(e) =>
+                    setNewItem({
+                      ...newItem,
+                      quantity: parseInt(e.target.value) || 1,
+                    })
+                  }
+                  className="w-1/3 p-2 border border-gray-200 rounded-lg"
+                />
+                <input
+                  type="text"
+                  placeholder="Unit (g, ml, etc.)"
+                  value={newItem.unit}
+                  onChange={(e) =>
+                    setNewItem({
+                      ...newItem,
+                      unit: e.target.value,
+                    })
+                  }
+                  className="w-2/3 p-2 border border-gray-200 rounded-lg"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleCancelAddItem()}
+                  className="w-1/2 bg-gray-100 text-gray-700 py-2 rounded-lg"
+                >
                   Cancel
                 </button>
-                <button onClick={handleAddItem} className="w-1/2 bg-red-600 text-white py-2 rounded-lg">
+                <button
+                  onClick={handleAddItem}
+                  className="w-1/2 bg-red-600 text-white py-2 rounded-lg"
+                >
                   Add Item
                 </button>
               </div>

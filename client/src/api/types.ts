@@ -7,6 +7,7 @@ export interface UserSettings {
 }
 
 export interface IngredientEntry {
+    id: string;
     name: string;
     quantity: number;
     unit: string;
@@ -19,21 +20,6 @@ export interface Folder {
     createdAt: number;
 }
 
-export interface RecipeSuggestion {
-    id: string;
-    mealName: string;
-    ingredients: {
-        name: string;
-        quantity: number;
-        unit: string;
-    }[];
-    instructions: string[];
-    cookTime?: number;
-    difficulty?: string;
-    image?: string;
-    savedAt?: number;
-    missingIngredient?: IngredientEntry;
-}
 export interface Recipe {
     id: string;
     folderId: string;
@@ -48,14 +34,7 @@ export interface Recipe {
     }[];
     image?: string | null;
 }
-export type CookingHistoryItem = {
-    id: string;
-    date: string;
-    recipeId: Recipe['id'];
-    recipeName: string;
-    type?: string;
-    image?: string | null;
-};
+
 export type ShoppingListItem = {
     id: string;
     name: string;
@@ -65,12 +44,9 @@ export type ShoppingListItem = {
 };
 
 
-export interface MealInfo {
-    name: string;
-    type: string;
-}
 
 export interface PantryItem {
+    id: string;
     name: string;
     quantity: number;
     unit: string;

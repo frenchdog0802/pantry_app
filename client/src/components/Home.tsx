@@ -5,9 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 interface HomeProps {
   onCookWithWhatIHave: () => void;
   onViewCalendar: () => void;
-  onManagePantry: () => void;
-  onQuickLog: () => void;
-  onShoppingList: () => void;
+  onManagePantry: (activeTabParam: string) => void;
   onRecipeManager: () => void;
   onSettings: () => void;
 }
@@ -15,8 +13,6 @@ export function Home({
   onCookWithWhatIHave,
   onViewCalendar,
   onManagePantry,
-  onQuickLog,
-  onShoppingList,
   onRecipeManager,
   onSettings
 }: HomeProps) {
@@ -58,13 +54,13 @@ export function Home({
           My Kitchen Stats
         </h3>
         <div className="grid grid-cols-2 gap-6">
-          <div className="bg-gray-50 p-5 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:bg-pink-50 hover:border-pink-100 transition-colors" onClick={onManagePantry}>
+          <div className="bg-gray-50 p-5 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:bg-pink-50 hover:border-pink-100 transition-colors" onClick={() => onManagePantry('inventory')}>
             <div className="text-3xl font-bold text-red-600 mb-1">
               {pantryItems.length}
             </div>
             <p className="text-gray-600">Items in Pantry</p>
           </div>
-          <div className="bg-gray-50 p-5 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:bg-blue-50 hover:border-blue-100 transition-colors" onClick={onShoppingList}>
+          <div className="bg-gray-50 p-5 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:bg-blue-50 hover:border-blue-100 transition-colors" onClick={() => onManagePantry('shopping')}>
             <div className="flex items-center">
               <div className="text-3xl font-bold text-blue-600 mb-1 mr-2">
                 {itemsToBuy}

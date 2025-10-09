@@ -1,4 +1,4 @@
-import { signout } from "./api-auth.js";
+import { signout } from "./Api-auth.js";
 const auth = {
   isAuthenticated() {
     if (typeof window == "undefined") return false;

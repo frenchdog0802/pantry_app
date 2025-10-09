@@ -1,16 +1,13 @@
-import React, { useState, createContext, useContext } from 'react';
-import { initialPantryItems } from '../utils/pantryData';
-import { PantryItem, CookingHistoryItem, ShoppingListItem, Recipe, RecipeSuggestion, Folder, UserSettings } from '../api/Types';
-import { recipeSuggestions } from '../utils/recipeData';
-import { recipeApi } from '../api/recipes';
-import { folderApi } from '../api/folder';
+import React, { useState, createContext, useContext, useEffect } from 'react';
+import { PantryItem, ShoppingListItem, Recipe, Folder, UserSettings, IngredientEntry } from '../api/Types';
+import { recipeApi } from '../api/Recipes';
+import { folderApi } from '../api/Folder';
+import { PantryItemApi } from '../api/PantryItem';
+import { ingredientApi } from "../api/Ingredient";
+
 interface PantryContextType {
-  pantryItems: PantryItem[];
-  cookingHistory: CookingHistoryItem[];
   shoppingList: ShoppingListItem[];
   recipes: Recipe[];
-  updatePantryItems: (items: PantryItem[]) => void;
-  addToCookingHistory: (recipe: any) => void;
   addToShoppingList: (item: Omit<ShoppingListItem, 'id' | 'purchased'>) => void;
   updateShoppingList: (items: ShoppingListItem[]) => void;
   fetchAllRecipes: () => void;
@@ -21,9 +18,20 @@ interface PantryContextType {
   updateUserSettings: (settings: UserSettings) => void;
   folders: Folder[];
   fetchAllFolders: () => void;
-  addFolder: (folder: Omit<Folder, 'id'>) => void;
+  addFolder: (folder: Omit<Folder, 'id'>) => Promise<void>;
   deleteFolder: (id: string) => void;
   updateFolder: (folder: Folder) => void;
+
+  // pantry items
+  pantryItems: PantryItem[];
+  fetchAllPantryItems: () => void;
+  updatePantryItem: (item: PantryItem) => void;
+  addPantryItem: (item: Omit<PantryItem, 'id'>) => void;
+  removePantryItem?: (id: string) => void;
+
+  // ingredients
+  fetchAllIngredients: (query: string | null) => void;
+  ingredients: IngredientEntry[];
 }
 
 const PantryContext = createContext<PantryContextType | undefined>(undefined);
@@ -32,9 +40,12 @@ export function PantryProvider({
 }: {
   children: React.ReactNode;
 }) {
+  // ingredient state
+  const [ingredients, setIngredients] = useState<IngredientEntry[]>([]);
+  // folder state
   const [folders, setFolders] = useState<Folder[]>([]);
-  const [pantryItems, setPantryItems] = useState<PantryItem[]>(initialPantryItems);
-  const [cookingHistory, setCookingHistory] = useState<CookingHistoryItem[]>([]);
+  // main state
+  const [pantryItems, setPantryItems] = useState<PantryItem[]>([]);
   const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [userSettings, setUserSettings] = useState<UserSettings>({
@@ -42,6 +53,7 @@ export function PantryProvider({
     language: 'english',
     measurementUnit: 'metric'
   });
+
   const fetchAllFolders = async () => {
     try {
       const fetchedFolders = await folderApi.list();
@@ -51,7 +63,7 @@ export function PantryProvider({
     }
   };
 
-  const addFolder = async (folder: Omit<Folder, 'id'>, userId: string) => {
+  const addFolder = async (folder: Omit<Folder, 'id'>) => {
     // temporary folder for optimistic UI
     const tempFolder: Folder = {
       ...folder,
@@ -84,20 +96,7 @@ export function PantryProvider({
   };
 
 
-  const updatePantryItems = (items: PantryItem[]) => {
-    setPantryItems(items);
-  };
-  const addToCookingHistory = (recipe: any) => {
-    const historyItem: CookingHistoryItem = {
-      id: `history-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      date: recipe.date || new Date().toISOString().split('T')[0],
-      recipeId: recipe.id,
-      recipeName: recipe.name,
-      type: recipe.type || 'dinner',
-      image: recipe.image || null
-    };
-    setCookingHistory(prev => [...prev, historyItem]);
-  };
+
   const addToShoppingList = (item: Omit<ShoppingListItem, 'id' | 'purchased'>) => {
     const newItem = {
       ...item,
@@ -152,13 +151,66 @@ export function PantryProvider({
     setUserSettings(settings);
   };
 
+  const fetchAllPantryItems = async () => {
+    try {
+      const fetchedPantryItems = await PantryItemApi.list();
+      setPantryItems(fetchedPantryItems);
+    } catch (err) {
+      console.error('Fetch pantry items failed:', err);
+    }
+  };
+  const addPantryItem = async (item: Omit<PantryItem, 'id'>) => {
+    // temporary item for optimistic UI
+    const tempItem: PantryItem = {
+      ...item,
+      id: `pantry-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    };
+
+    setPantryItems(prev => [...prev, tempItem]);
+
+    try {
+      const savedItem = await PantryItemApi.create(item);
+
+      // replace temp with the one from backend
+      setPantryItems(prev =>
+        prev.map(i => (i.id === tempItem.id ? savedItem : i))
+      );
+    } catch (err) {
+      console.error('Insert pantry item failed:', err);
+      // rollback if needed
+      setPantryItems(prev => prev.filter(i => i.id !== tempItem.id));
+    }
+  };
+  const updatePantryItem = (item: PantryItem) => {
+    setPantryItems(prev => prev.map(i => i.id === item.id ? item : i));
+    PantryItemApi.update(item.id, item);
+  };
+
+  const removePantryItem = (id: string) => {
+    setPantryItems(prev => prev.filter(i => i.id !== id));
+    PantryItemApi.delete(id);
+  };
+
+  // fetch ingredients with optional query
+  const fetchAllIngredients = async (query: string | null) => {
+    try {
+      const fetchedIngredients = await ingredientApi.list(query || undefined);
+      setIngredients(fetchedIngredients);
+    } catch (err) {
+      console.error('Fetch ingredients failed:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllFolders();
+    fetchAllRecipes();
+    fetchAllPantryItems();
+  }, []);
+
   return <PantryContext.Provider value={{
     recipes,
     pantryItems,
-    cookingHistory,
     shoppingList,
-    updatePantryItems,
-    addToCookingHistory,
     addToShoppingList,
     updateShoppingList,
     addRecipe,
@@ -171,7 +223,13 @@ export function PantryProvider({
     fetchAllFolders,
     addFolder,
     deleteFolder,
-    updateFolder
+    updateFolder,
+    fetchAllPantryItems,
+    updatePantryItem,
+    addPantryItem,
+    removePantryItem,
+    fetchAllIngredients,
+    ingredients
   }}>
     {children}
   </PantryContext.Provider>;
@@ -183,5 +241,3 @@ export function usePantry() {
   }
   return context;
 }
-
-export { initialPantryItems };

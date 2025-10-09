@@ -1,31 +1,17 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 
-export interface User extends mongoose.Document {
-  name: string;
-  email: string;
-  password_hash: string;
-  role?: string;
-  ConnectAccount?: string;
-  createdAt: number;
-  updatedAt: number;
-  authenticate(password: string): Promise<boolean>;
-}
-
-const UserSchema = new mongoose.Schema<User>(
+const UserSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, trim: true },
     password_hash: { type: String, required: true },
     role: { type: String, default: "user" },
     ConnectAccount: { type: String },
+    createdAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
+    updatedAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
   },
   {
-    timestamps: {
-      currentTime: () => Math.floor(Date.now() / 1000),
-      createdAt: "createdAt",
-      updatedAt: "updatedAt",
-    },
     versionKey: false,
   }
 );
@@ -38,15 +24,25 @@ UserSchema.pre("save", async function (next) {
   next();
 });
 
-UserSchema.methods.authenticate = async function (password: string) {
+// Password authentication method
+UserSchema.methods.authenticate = async function (password) {
   return bcrypt.compare(password, this.password_hash);
 };
 
+// Clean JSON output
 UserSchema.set("toJSON", {
   transform: (_, ret) => {
-    ret.id = ret.id.toString();
+    ret.id = ret._id.toString();
     delete ret._id;
+    delete ret.password_hash; // Never expose hash
   },
 });
 
-export default mongoose.model<User>("User", UserSchema);
+UserSchema.pre('save', function (next) {
+  this.updatedAt = Math.floor(Date.now() / 1000);
+  next();
+});
+
+
+const User = mongoose.model("User", UserSchema);
+export default User;

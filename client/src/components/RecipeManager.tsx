@@ -62,7 +62,6 @@ export function RecipeManager({
   }, []);
 
   useEffect(() => {
-    setFolders(savedFolders);
     // If no folders exist, initialize default ones
     if (savedFolders.length === 0) {
       initializeDefaultFolders();

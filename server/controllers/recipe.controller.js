@@ -1,5 +1,16 @@
 import Recipe from "../models/recipe.model.js";
+import Ingredient from "../models/ingredient.model.js";
 
+// Create a new recipe
+export const createRecipe = async (req, res) => {
+    const recipe = new Recipe(req.body);
+    try {
+        const newRecipe = await recipe.save();
+        res.status(201).json(newRecipe);
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+};
 
 // Get all recipes
 export const getAllRecipes = async (req, res) => {
@@ -22,16 +33,7 @@ export const getRecipeById = async (req, res) => {
     }
 };
 
-// Create a new recipe
-export const createRecipe = async (req, res) => {
-    const recipe = new Recipe(req.body);
-    try {
-        const newRecipe = await recipe.save();
-        res.status(201).json(newRecipe);
-    } catch (err) {
-        res.status(400).json({ message: err.message });
-    }
-};
+
 
 // Update a recipe
 export const updateRecipe = async (req, res) => {

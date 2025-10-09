@@ -9,6 +9,8 @@ import authRoutes from "./routes/auth.routes.js";
 import path from "path";
 import recipeRoutes from "./routes/recipe.routes.js";
 import folderRoutes from "./routes/folder.routet.js";
+import ingredientRoute from "./routes/ingredient.route.js";
+import pantryItemRoute from "./routes/pantryItem.route.js";
 
 
 
@@ -24,6 +26,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/recipe", recipeRoutes);
 app.use("/api/folder", folderRoutes);
+app.use("/api/ingredient", ingredientRoute);
+app.use("/api/pantry-item", pantryItemRoute);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
