@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeftIcon, PlusIcon, MinusIcon, TrashIcon, SearchIcon, CalendarIcon, AlertTriangleIcon, PackageIcon, ShoppingCartIcon, CheckIcon } from 'lucide-react';
+import { ArrowLeftIcon, PlusIcon, MinusIcon, TrashIcon, SearchIcon, PackageIcon, ShoppingCartIcon, CheckIcon } from 'lucide-react';
 import { usePantry } from '../contexts/PantryContext';
 import { PantryItem } from '../api/Types';
+import useSearchIngredients from '../hooks/useSearchIngredients';
 interface PantryManagerProps {
   onBack: () => void;
   onManagePantry: (activeTabParam: string) => void;
@@ -20,9 +21,11 @@ export function PantryManager({
     shoppingList,
     ingredients,
     fetchAllIngredients,
-    updateShoppingList
+    // shopping list functions
+    addShoppingListItem,
+    updateShoppingListItem,
+    removeShoppingListItem
   } = usePantry();
-  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [newItem, setNewItem] = useState({
     name: '',
@@ -32,16 +35,31 @@ export function PantryManager({
   const [newShoppingItem, setNewShoppingItem] = useState({
     name: '',
     quantity: 1,
-    unit: ''
+    unit: '',
+    checked: false
   });
-  const [filteredIngredients, setFilteredIngredients] = useState<typeof pantryItems>([]);
+  // Pantry item search dropdown
+  const { filteredIngredients: filteredPantryIngredients, loading: pantryLoading } = useSearchIngredients(
+    newItem.name,
+    pantryItems,
+    ingredients,
+    fetchAllIngredients
+  );
+
+  // Shopping item search dropdown
+  const { filteredIngredients: filteredShoppingIngredients, loading: shoppingLoading } = useSearchIngredients(
+    newShoppingItem.name,
+    pantryItems,
+    ingredients,
+    fetchAllIngredients
+  );
   const [showDropdown, setShowDropdown] = useState(false);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [isAddingShoppingItem, setIsAddingShoppingItem] = useState(false);
   const [activeTab, setActiveTab] = useState(activeTabParam); // 'inventory' or 'shopping'
   const [shoppingSearchQuery, setShoppingSearchQuery] = useState('');
   // Count items that need to be bought (in shopping list)
-  const itemsToBuy = shoppingList.filter(item => !item.purchased).length;
+  const itemsToBuy = shoppingList.filter(item => !item.checked).length;
   // Filter pantry items based on search query and active tab
   const filteredItems = pantryItems.filter(item => {
     // if is not english dont toLowerCase, but if is english do toLowerCase
@@ -75,47 +93,6 @@ export function PantryManager({
       removePantryItem(item.id);
     }
   };
-
-  useEffect(() => {
-    const controller = new AbortController(); // 防止舊請求 race condition
-
-    if (newItem.name.trim() === "") {
-      setFilteredIngredients([]);
-      return;
-    }
-
-    const delayDebounce = setTimeout(async () => {
-      try {
-        setLoading(true);
-        fetchAllIngredients(newItem.name);
-
-        // combine pantry items with fetched ingredients for dropdown
-        const combined = [
-          ...pantryItems.filter(p => p.name.toLowerCase().includes(newItem.name.toLowerCase())),
-          ...ingredients
-            .filter(i => i.name.toLowerCase().includes(newItem.name.toLowerCase()) && !pantryItems.some(p => p.name === i.name))
-            .map(i => ({
-              id: i.id,
-              name: i.name,
-              quantity: i.quantity ?? 1,
-              unit: i.unit ?? ""
-            }))
-        ];
-        setFilteredIngredients(combined);
-
-      } catch (err) {
-        console.error('Error fetching ingredients:', err);
-        setFilteredIngredients([]);
-      } finally {
-        setLoading(false);
-      }
-    }, 300); // 300ms debounce time
-
-    return () => {
-      clearTimeout(delayDebounce);
-      controller.abort();
-    };
-  }, [newItem.name]);
 
 
   const handleSelectIngredient = (ingredient: PantryItem) => {
@@ -153,70 +130,40 @@ export function PantryManager({
       quantity: 1,
       unit: '',
     });
-    setFilteredIngredients([]);
     setShowDropdown(false);
     setIsAddingItem(false);
   }
   // Shopping List Functions
   const handleAddShoppingItem = () => {
     if (!newShoppingItem.name.trim()) return;
-    // Add new item to shopping list
-    const newItem = {
-      id: `shopping-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      name: newShoppingItem.name,
-      quantity: newShoppingItem.quantity,
-      unit: newShoppingItem.unit,
-      purchased: false
-    };
-    updateShoppingList([...shoppingList, newItem]);
+    // Check if item already exists in shopping list
+    const existingItem = shoppingList.find(item => item.name.toLowerCase() === newShoppingItem.name.toLowerCase());
+    if (existingItem) {
+      updateShoppingListItem({ ...existingItem, quantity: newShoppingItem.quantity });
+    } else {
+      // Add new item
+      addShoppingListItem({ ...newShoppingItem });
+    }
     // Reset form
     setNewShoppingItem({
       name: '',
       quantity: 1,
-      unit: ''
+      unit: '',
+      checked: false
     });
     setIsAddingShoppingItem(false);
+    setShowDropdown(false);
   };
   const handleTogglePurchased = (id: string) => {
-    const updatedList = shoppingList.map(item => item.id === id ? {
-      ...item,
-      purchased: !item.purchased
-    } : item);
-    updateShoppingList(updatedList);
+    const item = shoppingList.find(i => i.id === id);
+    if (!item) return;
+    const updatedItem = { ...item, checked: !item.checked };
+    updateShoppingListItem(updatedItem);
   };
   const handleRemoveShoppingItem = (id: string) => {
-    const updatedList = shoppingList.filter(item => item.id !== id);
-    updateShoppingList(updatedList);
-  };
-  const handleAddToPantry = (item: any) => {
-    // Check if item already exists in pantry
-    const existingItem = pantryItems.find(pantryItem => pantryItem.name.toLowerCase() === item.name.toLowerCase());
-    if (existingItem) {
-      // Update quantity if item exists
-      const updatedPantry = pantryItems.map(pantryItem => {
-        if (pantryItem.name.toLowerCase() === item.name.toLowerCase()) {
-          return {
-            ...pantryItem,
-            quantity: pantryItem.quantity + item.quantity
-          };
-        }
-        return pantryItem;
-      });
-      // updatePantryItems(updatedPantry);
-    } else {
-      // Add new item to pantry
-      // updatePantryItems([...pantryItems, {
-      //   name: item.name,
-      //   quantity: item.quantity,
-      //   unit: item.unit
-      // }]);
+    if (removeShoppingListItem) {
+      removeShoppingListItem(id);
     }
-    // Mark as purchased in shopping list
-    const updatedList = shoppingList.map(listItem => listItem.id === item.id ? {
-      ...listItem,
-      purchased: true
-    } : listItem);
-    updateShoppingList(updatedList);
   };
   return <div className="flex flex-col w-full min-h-screen bg-gray-50">
     {/* Header */}
@@ -279,40 +226,99 @@ export function PantryManager({
           </div>
 
           {/* Add New Shopping Item Button */}
-          {!isAddingShoppingItem ? <button onClick={() => setIsAddingShoppingItem(true)} className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-medium py-3 px-4 rounded-xl mb-6 shadow-sm transition-colors">
-            <PlusIcon size={18} />
-            <span>Add New Shopping Item</span>
-          </button> : <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6">
-            <h3 className="font-medium text-gray-700 mb-3">
-              Add Item to Shopping List
-            </h3>
-            <div className="space-y-3">
-              <input type="text" placeholder="Item name" value={newShoppingItem.name} onChange={e => setNewShoppingItem({
-                ...newShoppingItem,
-                name: e.target.value
-              })} className="w-full p-2 border border-gray-200 rounded-lg" />
-              <div className="flex gap-2">
-                <input type="number" min="1" value={newShoppingItem.quantity} onChange={e => setNewShoppingItem({
-                  ...newShoppingItem,
-                  quantity: parseInt(e.target.value) || 1
-                })} className="w-1/3 p-2 border border-gray-200 rounded-lg" />
-                <input type="text" placeholder="Unit (g, ml, etc.)" value={newShoppingItem.unit} onChange={e => setNewShoppingItem({
-                  ...newShoppingItem,
-                  unit: e.target.value
-                })} className="w-2/3 p-2 border border-gray-200 rounded-lg" />
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => setIsAddingShoppingItem(false)} className="w-1/2 bg-gray-100 text-gray-700 py-2 rounded-lg">
-                  Cancel
-                </button>
-                <button onClick={handleAddShoppingItem} className="w-1/2 bg-blue-600 text-white py-2 rounded-lg">
-                  Add Item
-                </button>
+          {!isAddingShoppingItem ? (
+            <button
+              onClick={() => setIsAddingShoppingItem(true)}
+              className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-medium py-3 px-4 rounded-xl mb-6 shadow-sm transition-colors"
+            >
+              <PlusIcon size={18} />
+              <span>Add New Shopping Item</span>
+            </button>
+          ) : (
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6">
+              <h3 className="font-medium text-gray-700 mb-3">
+                Add Item to Shopping List
+              </h3>
+              <div className="space-y-3 relative">
+                <input
+                  type="text"
+                  placeholder="Search or add item name"
+                  value={newShoppingItem.name}
+                  onChange={(e) =>
+                    setNewShoppingItem({ ...newShoppingItem, name: e.target.value })
+                  }
+                  onFocus={() => setShowDropdown(true)}
+                  className="w-full p-2 border border-gray-200 rounded-lg"
+                />
+
+                {showDropdown && filteredShoppingIngredients.length > 0 && (
+                  <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                    {filteredShoppingIngredients.map((ingredient: PantryItem) => (
+                      <li key={ingredient.id} className="p-2 hover:bg-gray-100">
+                        <button
+                          onClick={() => {
+                            setNewShoppingItem({ name: ingredient.name, unit: ingredient.unit || '', quantity: 1, checked: false });
+                            setShowDropdown(false);
+                          }}
+                          className="w-full text-left"
+                        >
+                          {ingredient.name}{" "}
+                          <span className="text-sm text-gray-400">
+                            ({ingredient.unit})
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    value={newShoppingItem.quantity}
+                    onChange={(e) =>
+                      setNewShoppingItem({
+                        ...newShoppingItem,
+                        quantity: parseInt(e.target.value) || 1,
+                      })
+                    }
+                    className="w-1/3 p-2 border border-gray-200 rounded-lg"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Unit (g, ml, etc.)"
+                    value={newShoppingItem.unit}
+                    onChange={(e) =>
+                      setNewShoppingItem({
+                        ...newShoppingItem,
+                        unit: e.target.value,
+                      })
+                    }
+                    className="w-2/3 p-2 border border-gray-200 rounded-lg"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setNewShoppingItem({ name: '', quantity: 1, unit: '', checked: false });
+                      setIsAddingShoppingItem(false);
+                    }}
+                    className="w-1/2 bg-gray-100 text-gray-700 py-2 rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAddShoppingItem}
+                    className="w-1/2 bg-blue-600 text-white py-2 rounded-lg"
+                  >
+                    Add Item
+                  </button>
+                </div>
               </div>
             </div>
-          </div>}
-
-          {/* Shopping List */}
+          )}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-4 border-b border-gray-100 bg-gray-50">
               <h2 className="font-semibold text-gray-800">Items to Buy</h2>
@@ -325,13 +331,13 @@ export function PantryManager({
                 Try a different search term
               </p>}
             </div> : <ul className="divide-y divide-gray-100">
-              {filteredShoppingItems.map(item => <li key={item.id} className={`p-4 ${item.purchased ? 'bg-gray-50' : ''}`}>
+              {filteredShoppingItems.map(item => <li key={item.id} className={`p-4 ${item.checked ? 'bg-gray-50' : ''}`}>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center">
-                    <button onClick={() => handleTogglePurchased(item.id)} className={`w-5 h-5 mr-3 flex-shrink-0 rounded border ${item.purchased ? 'bg-green-500 border-green-500 flex items-center justify-center' : 'border-gray-300'}`} aria-label={item.purchased ? 'Mark as not purchased' : 'Mark as purchased'}>
-                      {item.purchased && <CheckIcon size={12} className="text-white" />}
+                    <button onClick={() => handleTogglePurchased(item.id)} className={`w-5 h-5 mr-3 flex-shrink-0 rounded border ${item.checked ? 'bg-green-500 border-green-500 flex items-center justify-center' : 'border-gray-300'}`} aria-label={item.checked ? 'Mark as not purchased' : 'Mark as purchased'}>
+                      {item.checked && <CheckIcon size={12} className="text-white" />}
                     </button>
-                    <div className={item.purchased ? 'line-through text-gray-400' : ''}>
+                    <div className={item.checked ? 'line-through text-gray-400' : ''}>
                       <h3 className="font-medium text-gray-800 capitalize">
                         {item.name}
                       </h3>
@@ -341,9 +347,6 @@ export function PantryManager({
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    {!item.purchased && <button onClick={() => handleAddToPantry(item)} className="p-1.5 rounded-full hover:bg-green-50 text-green-600" aria-label="Add to pantry" title="Add to pantry">
-                      <PackageIcon size={18} />
-                    </button>}
                     <button onClick={() => handleRemoveShoppingItem(item.id)} className="p-1.5 rounded-full hover:bg-red-50 text-red-500" aria-label="Remove item">
                       <TrashIcon size={18} />
                     </button>
@@ -382,9 +385,9 @@ export function PantryManager({
                 className="w-full p-2 border border-gray-200 rounded-lg"
               />
 
-              {showDropdown && filteredIngredients.length > 0 && (
+              {showDropdown && filteredPantryIngredients.length > 0 && (
                 <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                  {filteredIngredients.map((ingredient) => (
+                  {filteredPantryIngredients.map((ingredient: PantryItem) => (
                     <li
                       key={ingredient.id}
                       onClick={() => handleSelectIngredient(ingredient)}
@@ -399,7 +402,7 @@ export function PantryManager({
                 </ul>
               )}
 
-              {loading && (
+              {pantryLoading && (
                 <div className="absolute bg-white text-gray-400 text-sm p-2 rounded-lg border w-full">
                   Loading...
                 </div>

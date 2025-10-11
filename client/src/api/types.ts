@@ -40,7 +40,7 @@ export type ShoppingListItem = {
     name: string;
     quantity: number;
     unit: string;
-    purchased: boolean;
+    checked: boolean;
 };
 
 

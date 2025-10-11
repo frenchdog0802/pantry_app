@@ -1,8 +1,8 @@
-import PantryItem from "../models/pantryItem.model.js";
+import ShoppingListItem from "../models/shoppingList.model.js";
 import Ingredient from "../models/ingredient.model.js";
-// Insert all
 
-export const insertAllPantryItems = async (req, res) => {
+// Insert all shopping list items
+export const insertAllShoppingListItems = async (req, res) => {
     try {
         const items = req.body;
         const insertedItems = [];
@@ -29,7 +29,7 @@ export const insertAllPantryItems = async (req, res) => {
                 ingredientId = ingredient._id;
             }
 
-            const pantryItem = await PantryItem.create({
+            const shoppingListItem = await ShoppingListItem.create({
                 user_id: 1, // Temporary user_id, replace with actual user ID from auth middleware as needed
                 ingredient_id: ingredientId,
                 quantity: item.quantity,
@@ -37,18 +37,18 @@ export const insertAllPantryItems = async (req, res) => {
                 notes: item.notes || "",
             });
 
-            insertedItems.push(pantryItem);
+            insertedItems.push(shoppingListItem);
         }
 
         res.status(201).json(insertedItems);
     } catch (err) {
-        console.error("insertAllPantryItems error:", err);
+        console.error("insertAllShoppingListItems error:", err);
         res.status(400).json({ message: err.message });
     }
 };
 
-// Create a new pantry item
-export const createPantryItem = async (req, res) => {
+// Create a new shopping list item
+export const createShoppingListItem = async (req, res) => {
     try {
         const item = req.body;
 
@@ -73,35 +73,33 @@ export const createPantryItem = async (req, res) => {
             ingredientObj = ingredient;
         }
 
-        const pantryItem = await PantryItem.create({
+        const shoppingListItem = await ShoppingListItem.create({
             user_id: 1, // Temporary user_id, replace with actual user ID from auth middleware as needed
             ingredient_id: ingredientObj._id,
             quantity: item.quantity,
-            unit: item.unit || ingredientObj.default_unit,
-            notes: item.notes || "",
+            unit: item.unit || (typeof ingredientObj !== "undefined" && ingredientObj.default_unit ? ingredientObj.default_unit : ""),
+            checked: item.checked || false,
         });
-
         const returnObject = {
-            id: pantryItem._id,
-            quantity: pantryItem.quantity,
-            unit: pantryItem.unit,
-            notes: pantryItem.notes,
+            id: shoppingListItem._id,
+            quantity: shoppingListItem.quantity,
+            unit: shoppingListItem.unit,
+            checked: shoppingListItem.checked,
             name: ingredientObj.name,
         };
-
         res.status(200).json(returnObject);
     } catch (err) {
-        console.error("insertAllPantryItems error:", err);
+        console.error("createShoppingListItem error:", err);
         res.status(400).json({ message: err.message });
     }
 };
 
-// Get all pantry items
-export const getAllPantryItems = async (req, res) => {
+// Get all shopping list items
+export const getAllShoppingListItems = async (req, res) => {
     try {
-        const pantryItems = await PantryItem.find();
+        const shoppingListItems = await ShoppingListItem.find();
         // find name from ingredient model
-        const itemsWithNames = await Promise.all(pantryItems.map(async (item) => {
+        const itemsWithNames = await Promise.all(shoppingListItems.map(async (item) => {
             const ingredient = await Ingredient.findById(item.ingredient_id);
             return {
                 id: item._id.toString(),
@@ -118,50 +116,48 @@ export const getAllPantryItems = async (req, res) => {
     }
 };
 
-// Get a single pantry item by ID
-export const getPantryItemById = async (req, res) => {
+// Get a single shopping list item by ID
+export const getShoppingListItemById = async (req, res) => {
     try {
-        const pantryItem = await PantryItem.findById(req.params.id);
-        if (!pantryItem) return res.status(404).json({ message: 'Pantry item not found' });
-        res.json(pantryItem);
+        const shoppingListItem = await ShoppingListItem.findById(req.params.id);
+        if (!shoppingListItem) return res.status(404).json({ message: 'Shopping list item not found' });
+        res.json(shoppingListItem);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 };
 
-
-
-// Update a pantry item
-export const updatePantryItem = async (req, res) => {
+// Update a shopping list item
+export const updateShoppingListItem = async (req, res) => {
     try {
-        const updatedPantryItem = await PantryItem.findByIdAndUpdate(
+        const updatedShoppingListItem = await ShoppingListItem.findByIdAndUpdate(
             req.params.id,
             req.body,
             { new: true }
         );
-        if (!updatedPantryItem) return res.status(404).json({ message: 'Pantry item not found' });
-        res.json(updatedPantryItem);
+        if (!updatedShoppingListItem) return res.status(404).json({ message: 'Shopping list item not found' });
+        res.json(updatedShoppingListItem);
     } catch (err) {
         res.status(400).json({ message: err.message });
     }
 };
 
-// Delete a pantry item
-export const deletePantryItem = async (req, res) => {
+// Delete a shopping list item
+export const deleteShoppingListItem = async (req, res) => {
     try {
-        const deletedPantryItem = await PantryItem.findByIdAndDelete(req.params.id);
-        if (!deletedPantryItem) return res.status(404).json({ message: 'Pantry item not found' });
-        res.json({ message: 'Pantry item deleted' });
+        const deletedShoppingListItem = await ShoppingListItem.findByIdAndDelete(req.params.id);
+        if (!deletedShoppingListItem) return res.status(404).json({ message: 'Shopping list item not found' });
+        res.json({ message: 'Shopping list item deleted' });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 };
 
 export default {
-    insertAllPantryItems,
-    getAllPantryItems,
-    getPantryItemById,
-    createPantryItem,
-    updatePantryItem,
-    deletePantryItem
+    insertAllShoppingListItems,
+    getAllShoppingListItems,
+    getShoppingListItemById,
+    createShoppingListItem,
+    updateShoppingListItem,
+    deleteShoppingListItem
 };

@@ -4,12 +4,10 @@ import { recipeApi } from '../api/Recipes';
 import { folderApi } from '../api/Folder';
 import { PantryItemApi } from '../api/PantryItem';
 import { ingredientApi } from "../api/Ingredient";
+import { shoppingListApi } from '../api/ShoppingList';
 
 interface PantryContextType {
-  shoppingList: ShoppingListItem[];
   recipes: Recipe[];
-  addToShoppingList: (item: Omit<ShoppingListItem, 'id' | 'purchased'>) => void;
-  updateShoppingList: (items: ShoppingListItem[]) => void;
   fetchAllRecipes: () => void;
   addRecipe: (Recipe: Omit<Recipe, 'id'>) => void;
   updateRecipe: (Recipe: Recipe) => void;
@@ -32,6 +30,13 @@ interface PantryContextType {
   // ingredients
   fetchAllIngredients: (query: string | null) => void;
   ingredients: IngredientEntry[];
+
+  // shopping List
+  shoppingList: ShoppingListItem[];
+  fetchAllShoppingListItems: () => void;
+  updateShoppingListItem: (item: ShoppingListItem) => void;
+  addShoppingListItem: (item: Omit<ShoppingListItem, 'id'>) => void;
+  removeShoppingListItem?: (id: string) => void;
 }
 
 const PantryContext = createContext<PantryContextType | undefined>(undefined);
@@ -95,19 +100,6 @@ export function PantryProvider({
     folderApi.update(folder.id, folder);
   };
 
-
-
-  const addToShoppingList = (item: Omit<ShoppingListItem, 'id' | 'purchased'>) => {
-    const newItem = {
-      ...item,
-      id: `shopping-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      purchased: false
-    };
-    setShoppingList(prev => [...prev, newItem]);
-  };
-  const updateShoppingList = (items: ShoppingListItem[]) => {
-    setShoppingList(items);
-  };
 
   const fetchAllRecipes = async () => {
     try {
@@ -201,18 +193,60 @@ export function PantryProvider({
     }
   };
 
+  // shopping list item functions
+  const fetchAllShoppingListItems = async () => {
+    try {
+      const fetchedItems = await shoppingListApi.list();
+      setShoppingList(fetchedItems);
+    } catch (err) {
+      console.error('Fetch shopping list items failed:', err);
+    }
+  };
+  const updateShoppingListItem = (item: ShoppingListItem) => {
+    setShoppingList(prev => prev.map(i => i.id === item.id ? item : i));
+    shoppingListApi.update(item.id, item);
+  };
+
+  const addShoppingListItem = async (item: Omit<ShoppingListItem, 'id'>) => {
+    // temporary item for optimistic UI
+    const tempItem: ShoppingListItem = {
+      ...item,
+      id: `shopping-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      checked: false
+    };
+
+    setShoppingList(prev => [...prev, tempItem]);
+
+    try {
+      const savedItem = await shoppingListApi.create(item);
+
+      // replace temp with the one from backend
+      setShoppingList(prev =>
+        prev.map(i => (i.id === tempItem.id ? savedItem : i))
+      );
+    } catch (err) {
+      console.error('Insert shopping list item failed:', err);
+      // rollback if needed
+      setShoppingList(prev => prev.filter(i => i.id !== tempItem.id));
+    }
+
+  };
+  const removeShoppingListItem = (id: string) => {
+    setShoppingList(prev => prev.filter(i => i.id !== id));
+    shoppingListApi.delete(id);
+  };
+
   useEffect(() => {
     fetchAllFolders();
     fetchAllRecipes();
     fetchAllPantryItems();
+    fetchAllShoppingListItems();
   }, []);
 
   return <PantryContext.Provider value={{
     recipes,
     pantryItems,
     shoppingList,
-    addToShoppingList,
-    updateShoppingList,
     addRecipe,
     fetchAllRecipes,
     updateRecipe,
@@ -229,7 +263,11 @@ export function PantryProvider({
     addPantryItem,
     removePantryItem,
     fetchAllIngredients,
-    ingredients
+    ingredients,
+    fetchAllShoppingListItems,
+    updateShoppingListItem,
+    addShoppingListItem,
+    removeShoppingListItem
   }}>
     {children}
   </PantryContext.Provider>;
