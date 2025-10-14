@@ -1,10 +1,11 @@
 import React, { useState, createContext, useContext, useEffect } from 'react';
-import { PantryItem, ShoppingListItem, Recipe, Folder, UserSettings, IngredientEntry } from '../api/Types';
+import { PantryItem, ShoppingListItem, Recipe, Folder, UserSettings, IngredientEntry, MealPlan } from '../api/Types';
 import { recipeApi } from '../api/Recipes';
 import { folderApi } from '../api/Folder';
 import { PantryItemApi } from '../api/PantryItem';
 import { ingredientApi } from "../api/Ingredient";
 import { shoppingListApi } from '../api/ShoppingList';
+import { mealPlanApi } from '../api/MealPlan';
 
 interface PantryContextType {
   recipes: Recipe[];
@@ -24,6 +25,7 @@ interface PantryContextType {
   pantryItems: PantryItem[];
   fetchAllPantryItems: () => void;
   updatePantryItem: (item: PantryItem) => void;
+  updatePantryItems: (items: PantryItem[]) => void;
   addPantryItem: (item: Omit<PantryItem, 'id'>) => void;
   removePantryItem?: (id: string) => void;
 
@@ -37,6 +39,13 @@ interface PantryContextType {
   updateShoppingListItem: (item: ShoppingListItem) => void;
   addShoppingListItem: (item: Omit<ShoppingListItem, 'id'>) => void;
   removeShoppingListItem?: (id: string) => void;
+
+  // meal plans
+  mealPlan: MealPlan[];
+  fetchAllMealPlans: () => void;
+  addMealPlan: (mealPlan: Omit<MealPlan, 'id'>) => void;
+  updateMealPlan: (mealPlan: MealPlan) => void;
+  deleteMealPlan: (id: string) => void;
 }
 
 const PantryContext = createContext<PantryContextType | undefined>(undefined);
@@ -45,6 +54,8 @@ export function PantryProvider({
 }: {
   children: React.ReactNode;
 }) {
+  // meal plan state
+  const [mealPlan, setMealPlan] = useState<MealPlan[]>([]);
   // ingredient state
   const [ingredients, setIngredients] = useState<IngredientEntry[]>([]);
   // folder state
@@ -177,6 +188,10 @@ export function PantryProvider({
     setPantryItems(prev => prev.map(i => i.id === item.id ? item : i));
     PantryItemApi.update(item.id, item);
   };
+  const updatePantryItems = (items: PantryItem[]) => {
+    setPantryItems(items);
+    PantryItemApi.updateMany(items);
+  };
 
   const removePantryItem = (id: string) => {
     setPantryItems(prev => prev.filter(i => i.id !== id));
@@ -236,11 +251,54 @@ export function PantryProvider({
     shoppingListApi.delete(id);
   };
 
+  // meal plan functions
+  const fetchAllMealPlans = async () => {
+    try {
+      const fetchedMealPlans = await mealPlanApi.list();
+      setMealPlan(fetchedMealPlans);
+    } catch (err) {
+      console.error('Fetch meal plans failed:', err);
+    }
+  };
+  const addMealPlan = async (mealPlan: Omit<MealPlan, 'id'>) => {
+    // temporary meal plan for optimistic UI
+    const tempMealPlan: MealPlan = {
+      ...mealPlan,
+      id: `mealplan-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    };
+
+    setMealPlan(prev => [...prev, tempMealPlan]);
+
+    try {
+      const savedMealPlan = await mealPlanApi.create(mealPlan);
+
+      // replace temp with the one from backend
+      setMealPlan(prev =>
+        prev.map(m => (m.id === tempMealPlan.id ? savedMealPlan : m))
+      );
+    } catch (err) {
+      console.error('Insert meal plan failed:', err);
+      // rollback if needed
+      setMealPlan(prev => prev.filter(m => m.id !== tempMealPlan.id));
+    }
+  };
+  const updateMealPlan = (mealPlan: MealPlan) => {
+    setMealPlan(prev => prev.map(m => m.id === mealPlan.id ? mealPlan : m));
+    mealPlanApi.update(mealPlan.id, mealPlan);
+  };
+  const deleteMealPlan = (id: string) => {
+    setMealPlan(prev => prev.filter(m => m.id !== id));
+    mealPlanApi.delete(id);
+  };
+
+  // Initial data fetch 
+
   useEffect(() => {
     fetchAllFolders();
     fetchAllRecipes();
     fetchAllPantryItems();
     fetchAllShoppingListItems();
+    fetchAllMealPlans();
   }, []);
 
   return <PantryContext.Provider value={{
@@ -260,6 +318,7 @@ export function PantryProvider({
     updateFolder,
     fetchAllPantryItems,
     updatePantryItem,
+    updatePantryItems,
     addPantryItem,
     removePantryItem,
     fetchAllIngredients,
@@ -267,7 +326,12 @@ export function PantryProvider({
     fetchAllShoppingListItems,
     updateShoppingListItem,
     addShoppingListItem,
-    removeShoppingListItem
+    removeShoppingListItem,
+    mealPlan,
+    fetchAllMealPlans,
+    addMealPlan,
+    updateMealPlan,
+    deleteMealPlan
   }}>
     {children}
   </PantryContext.Provider>;

@@ -17,16 +17,13 @@ export interface Folder {
     id: string;
     name: string;
     icon: string;
-    createdAt: number;
 }
 
 export interface Recipe {
     id: string;
-    folderId: string;
-    mealName: string;
+    folder_id: string;
+    meal_name: string;
     instructions: string[];
-    cookTime?: number;
-    date: string;
     ingredients: {
         name: string;
         quantity: number;
@@ -44,10 +41,18 @@ export type ShoppingListItem = {
 };
 
 
-
 export interface PantryItem {
     id: string;
     name: string;
     quantity: number;
     unit: string;
+}
+
+export interface MealPlan {
+    id: string;
+    meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+    serving_date: string; // YYYY-MM-DD
+    recipe_id: string;
+    meal_name: string;
+    image?: string | null;
 }

@@ -3,9 +3,9 @@ import mongoose from "mongoose";
 const MealPlanSchema = new mongoose.Schema(
     {
         user_id: { type: String, required: true },
-        recipe_id: { type: Number, required: true },
+        recipe_id: { type: String, required: true },
         meal_type: { type: String },
-        serving_date: { type: String }, // e.g. 'YYYY-MM-DD' or ISO date
+        serving_date: { type: String }, // 'YYYY-MM-DD' 
         createdAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
         updatedAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
     },

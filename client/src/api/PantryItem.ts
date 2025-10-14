@@ -12,6 +12,9 @@ export const PantryItemApi = {
     // Update an existing recipe by ID
     update: (id: string | number, data: Partial<PantryItem>) => api.put<PantryItem>(`/api/pantry-item/${id}`, data),
 
+    // Bulk update many pantry items
+    updateMany: (items: Array<Pick<PantryItem, 'id'> & Partial<PantryItem>>) => api.put<PantryItem[]>(`/api/pantry-item/bulk`, items),
+
     // Delete a recipe by ID
     delete: (id: string | number) => api.delete<void>(`/api/pantry-item/${id}`),
 };

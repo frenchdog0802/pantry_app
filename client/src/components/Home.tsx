@@ -24,7 +24,7 @@ export function Home({
     user
   } = useAuth();
   // Count items that need to be bought (in shopping list)
-  const itemsToBuy = shoppingList.filter(item => !item.purchased).length;
+  const itemsToBuy = shoppingList.filter(item => !item.checked).length;
   return <div className="flex flex-col w-full min-h-screen bg-white">
     {/* Header */}
     <header className="bg-gradient-to-r from-orange-500 to-red-600 text-white p-5 shadow-md">

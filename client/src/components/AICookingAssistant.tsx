@@ -85,7 +85,7 @@ export function AICookingAssistant({
           // Convert to our RecipeSuggestion format
           suggestedRecipesList = cookNowRecipes.map(recipe => ({
             id: `suggestion-${recipe.id}`,
-            mealName: recipe.mealName,
+            mealName: recipe.meal_name,
             ingredients: recipe.ingredients,
             instructions: recipe.instructions,
             cookTime: recipe.cookTime,
@@ -102,7 +102,7 @@ export function AICookingAssistant({
               const missingIngredient = recipe.ingredients.find(ingredient => !pantryItems.some(item => item.name.toLowerCase() === ingredient.name.toLowerCase() && item.quantity >= ingredient.quantity));
               return {
                 id: `suggestion-${recipe.id}`,
-                mealName: recipe.mealName,
+                mealName: recipe.meal_name,
                 ingredients: recipe.ingredients,
                 instructions: recipe.instructions,
                 cookTime: recipe.cookTime,
@@ -124,7 +124,7 @@ export function AICookingAssistant({
             const missingIngredient = recipe.ingredients.find(ingredient => !pantryItems.some(item => item.name.toLowerCase() === ingredient.name.toLowerCase() && item.quantity >= ingredient.quantity));
             return {
               id: `suggestion-${recipe.id}`,
-              mealName: recipe.mealName,
+              mealName: recipe.meal_name,
               ingredients: recipe.ingredients,
               instructions: recipe.instructions,
               cookTime: recipe.cookTime,
@@ -151,7 +151,7 @@ export function AICookingAssistant({
           // Convert to our RecipeSuggestion format
           suggestedRecipesList = relevantRecipes.map(recipe => ({
             id: `suggestion-${recipe.id}`,
-            mealName: recipe.mealName,
+            mealName: recipe.meal_name,
             ingredients: recipe.ingredients,
             instructions: recipe.instructions,
             cookTime: recipe.cookTime,

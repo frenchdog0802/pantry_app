@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, UtensilsIcon, ImageIcon, PlusIcon, TrashIcon, XIcon, AlertCircleIcon, SearchIcon, ClockIcon, ChevronDownIcon, CalendarIcon, ListIcon, EditIcon, MoreHorizontalIcon, ChevronUpIcon } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, ImageIcon, PlusIcon, TrashIcon, XIcon, AlertCircleIcon, SearchIcon, ChevronDownIcon, CalendarIcon, ListIcon, MoreHorizontalIcon, ChevronUpIcon } from 'lucide-react';
 import { usePantry } from '../contexts/PantryContext';
+import { MealPlan } from '../api/Types';
 interface CalendarProps {
   onBack: () => void;
 }
@@ -8,21 +9,21 @@ export function Calendar({
   onBack
 }: CalendarProps) {
   const {
-    cookingHistory,
-    addToCookingHistory,
-    removeFromCookingHistory,
+    mealPlan,
+    addMealPlan,
+    deleteMealPlan,
     recipes: storedRecipes
   } = usePantry();
+  const [mealPlans, setMealPlans] = useState<MealPlan[]>(mealPlan || []);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [recipeToDelete, setRecipeToDelete] = useState<any>(null);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string>('');
-  const [selectedMealType, setSelectedMealType] = useState('dinner');
+  const [selectedMealType, setSelectedMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('dinner');
   const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [recentRecipes, setRecentRecipes] = useState<any[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   // New state for view toggle
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
@@ -67,22 +68,22 @@ export function Calendar({
   const hasCookingHistory = (day: number | null) => {
     if (!day) return false;
     const dateString = formatDateString(currentYear, currentMonth, day);
-    return cookingHistory.some(item => item.date === dateString);
+    return mealPlan.some((item: MealPlan) => item.serving_date === dateString);
   };
   // Get cooking history for selected date
   const getHistoryForSelectedDate = () => {
     if (!selectedDate) return [];
     const dateString = formatDateString(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-    return cookingHistory.filter(item => item.date === dateString);
+    return mealPlan.filter((item: MealPlan) => item.serving_date === dateString);
   };
   // Group history by meal type
   const getHistoryByMealType = () => {
     const history = getHistoryForSelectedDate();
     return {
-      breakfast: history.filter(item => item.type === 'breakfast'),
-      lunch: history.filter(item => item.type === 'lunch'),
-      dinner: history.filter(item => item.type === 'dinner'),
-      snack: history.filter(item => item.type === 'snack')
+      breakfast: history.filter((item: MealPlan) => item.meal_type === 'breakfast'),
+      lunch: history.filter((item: MealPlan) => item.meal_type === 'lunch'),
+      dinner: history.filter((item: MealPlan) => item.meal_type === 'dinner'),
+      snack: history.filter((item: MealPlan) => item.meal_type === 'snack')
     };
   };
   // Navigation functions
@@ -135,36 +136,7 @@ export function Calendar({
         return 'bg-gray-500';
     }
   };
-  // Load recent recipes from local storage
-  useEffect(() => {
-    const storedRecentRecipes = localStorage.getItem('recentRecipes');
-    if (storedRecentRecipes) {
-      try {
-        setRecentRecipes(JSON.parse(storedRecentRecipes));
-      } catch (e) {
-        console.error('Failed to parse recent recipes', e);
-        setRecentRecipes([]);
-      }
-    }
-  }, []);
-  // Save recent recipes to local storage
-  const updateRecentRecipes = (recipeId: string) => {
-    const recipe = storedRecipes.find(r => r.id === recipeId);
-    if (!recipe) return;
-    const recipeInfo = {
-      id: recipe.id,
-      mealName: recipe ? recipe.mealName : `Groceries`,
-      mealType: recipe ? recipe.mealType : 'grocery',
-      timestamp: Date.now()
-    };
-    // Remove if already exists, then add to front
-    const updatedRecents = recentRecipes.filter(r => r.id !== recipeId);
-    updatedRecents.unshift(recipeInfo);
-    // Keep only the most recent 5
-    const limitedRecents = updatedRecents.slice(0, 5);
-    setRecentRecipes(limitedRecents);
-    localStorage.setItem('recentRecipes', JSON.stringify(limitedRecents));
-  };
+
   // Handle add recipe
   const handleOpenAddRecipe = () => {
     if (selectedDate) {
@@ -192,7 +164,7 @@ export function Calendar({
   // Confirm recipe deletion
   const confirmDeleteRecipe = () => {
     if (recipeToDelete) {
-      removeFromCookingHistory(recipeToDelete.recipeId, recipeToDelete.date);
+      deleteMealPlan(recipeToDelete.id);
       setShowDeleteConfirmation(false);
       setRecipeToDelete(null);
     }
@@ -201,7 +173,7 @@ export function Calendar({
   const filteredRecipes = storedRecipes.filter(recipe => {
     // For meal recipes
     if (recipe) {
-      return recipe.mealName.toLowerCase().includes(searchQuery.toLowerCase());
+      return recipe.meal_name.toLowerCase().includes(searchQuery.toLowerCase());
     }
     return false;
   });
@@ -213,7 +185,7 @@ export function Calendar({
     const selectedRecipe = storedRecipes.find(r => r.id === recipeId);
     if (selectedRecipe) {
       if (selectedRecipe) {
-        setSearchQuery(selectedRecipe.mealName);
+        setSearchQuery(selectedRecipe.meal_name);
       }
     }
   };
@@ -238,23 +210,19 @@ export function Calendar({
     // Format the date string
     const dateString = selectedDate ? formatDateString(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate()) : new Date().toISOString().split('T')[0];
     // Create a recipe object for the cooking history
-    let recipeName = '';
+    let meal_name = '';
     if (recipe) {
-      recipeName = recipe.mealName;
+      meal_name = recipe.meal_name;
     }
     const calendarRecipe = {
-      id: `calendar-${Date.now()}`,
-      name: recipeName,
-      type: selectedMealType,
-      date: dateString,
-      recipeId: recipe.id,
-      recipeName: recipeName,
-      image: recipe.image || null
+      recipe_id: selectedRecipeId,
+      meal_name: meal_name,
+      meal_type: selectedMealType,
+      serving_date: dateString,
     };
     // Add to cooking history
-    addToCookingHistory(calendarRecipe);
-    // Add to recent recipes
-    updateRecentRecipes(recipe.id);
+    addMealPlan(calendarRecipe);
+
     // Reset and close modal
     setSelectedRecipeId('');
     setSearchQuery('');
@@ -299,9 +267,9 @@ export function Calendar({
       weekData[dateString] = [];
     });
     // Add cooking history data for the week
-    cookingHistory.forEach(item => {
-      if (weekData.hasOwnProperty(item.date)) {
-        weekData[item.date].push(item);
+    mealPlan.forEach((item: any) => {
+      if (weekData.hasOwnProperty(item.serving_date)) {
+        weekData[item.serving_date].push(item);
       }
     });
     return weekData;
@@ -437,14 +405,15 @@ export function Calendar({
                 const isToday = day === new Date().getDate() && currentMonth === new Date().getMonth() && currentYear === new Date().getFullYear();
                 const isSelected = selectedDate && day === selectedDate.getDate() && currentMonth === selectedDate.getMonth() && currentYear === selectedDate.getFullYear();
                 const hasHistory = hasCookingHistory(day);
+
                 // Get meal types for this day
                 const dateString = day ? formatDateString(currentYear, currentMonth, day) : '';
-                const dayMeals = day ? cookingHistory.filter(item => item.date === dateString) : [];
+                const dayMeals = day ? mealPlans.filter((item: MealPlan) => item.serving_date === dateString) : [];
                 const hasMealTypes = {
-                  breakfast: dayMeals.some(meal => meal.type === 'breakfast'),
-                  lunch: dayMeals.some(meal => meal.type === 'lunch'),
-                  dinner: dayMeals.some(meal => meal.type === 'dinner'),
-                  snack: dayMeals.some(meal => meal.type === 'snack')
+                  breakfast: dayMeals.some((meal: MealPlan) => meal.meal_type === 'breakfast'),
+                  lunch: dayMeals.some((meal: MealPlan) => meal.meal_type === 'lunch'),
+                  dinner: dayMeals.some((meal: MealPlan) => meal.meal_type === 'dinner'),
+                  snack: dayMeals.some((meal: MealPlan) => meal.meal_type === 'snack')
                 };
                 return <div key={index} onClick={() => handleDayClick(day)} className={`
                           h-20 p-1 relative flex flex-col 
@@ -507,27 +476,27 @@ export function Calendar({
                   {hasItems && (isExpanded ? <ChevronUpIcon size={18} className="text-gray-500" /> : <ChevronDownIcon size={18} className="text-gray-500" />)}
                 </div>
                 {isExpanded && hasItems && <div className="divide-y divide-gray-100">
-                  {items.map((item: any) => <div key={`${item.recipeId}-${item.date}-${item.type}`} className="p-3 hover:bg-gray-50">
+                  {items.map((item: MealPlan) => <div key={`${item.recipe_id}-${item.serving_date}-${item.meal_type}`} className="p-3 hover:bg-gray-50">
                     <div className="flex justify-between items-center">
                       <div className="flex items-center">
-                        <div className={`w-2 h-2 rounded-full mr-3 ${getMealTypeIndicatorColor(item.type)}`}></div>
+                        <div className={`w-2 h-2 rounded-full mr-3 ${getMealTypeIndicatorColor(item.meal_type)}`}></div>
                         <div>
                           <p className="font-medium text-gray-800">
-                            {item.recipeName}
+                            {item.meal_name}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {getMealTypeLabel(item.type)}
+                            {getMealTypeLabel(item.meal_type)}
                           </p>
                         </div>
                       </div>
                       <div className="relative">
                         <button onClick={e => {
                           e.stopPropagation();
-                          toggleItemActions(`${item.recipeId}-${item.date}-${item.type}`);
+                          toggleItemActions(`${item.recipe_id}-${item.serving_date}-${item.meal_type}`);
                         }} className="p-1 rounded-full hover:bg-gray-200">
                           <MoreHorizontalIcon size={18} className="text-gray-500" />
                         </button>
-                        {showItemActions === `${item.recipeId}-${item.date}-${item.type}` && <div className="absolute right-0 mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                        {showItemActions === `${item.recipe_id}-${item.serving_date}-${item.meal_type}` && <div className="absolute right-0 mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                           <button onClick={e => {
                             e.stopPropagation();
                             handleDeleteRecipe(item);
@@ -589,12 +558,12 @@ export function Calendar({
                 {getMealTypeLabel(type)}:
               </h4>
               <div className="space-y-3">
-                {meals.map((item, index) => <div key={index} className={`p-4 rounded-lg border ${getMealTypeColor(type)}`}>
+                {meals.map((item: MealPlan, index: number) => <div key={index} className={`p-4 rounded-lg border ${getMealTypeColor(type)}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <div className={`w-2 h-2 rounded-full mr-3 ${type === 'breakfast' ? 'bg-blue-500' : type === 'lunch' ? 'bg-amber-500' : type === 'dinner' ? 'bg-red-500' : 'bg-green-500'}`}></div>
                       <p className="font-medium text-gray-800">
-                        {item.recipeName}
+                        {item.meal_name}
                       </p>
                       {item.image && <ImageIcon size={18} className="ml-2 text-gray-400" />}
                     </div>
@@ -648,7 +617,7 @@ export function Calendar({
                 Meal Type
               </label>
               <div className="grid grid-cols-2 gap-2">
-                {['breakfast', 'lunch', 'dinner', 'snack'].map(type => <button key={type} type="button" onClick={() => setSelectedMealType(type)} className={`py-3 px-4 rounded-xl border ${selectedMealType === type ? 'bg-red-50 border-red-200 text-red-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'} transition-colors`}>
+                {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map(type => <button key={type} type="button" onClick={() => setSelectedMealType(type)} className={`py-3 px-4 rounded-xl border ${selectedMealType === type ? 'bg-red-50 border-red-200 text-red-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'} transition-colors`}>
                   {type.charAt(0).toUpperCase() + type.slice(1)}
                 </button>)}
               </div>
@@ -672,29 +641,9 @@ export function Calendar({
                   </div>
                 </div>
                 {isDropdownOpen && <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-lg border border-gray-200 max-h-60 overflow-auto">
-                  {/* Recent Recipes Section */}
-                  {recentRecipes.length > 0 && <div className="p-2">
-                    <div className="flex items-center px-3 py-2 text-sm text-gray-500">
-                      <ClockIcon size={14} className="mr-1.5" />
-                      <span>Recent Recipes</span>
-                    </div>
-                    {recentRecipes.map(recipe => {
-                      const fullRecipe = storedRecipes.find(r => r.id === recipe.id);
-                      if (!fullRecipe) return null;
-                      return <div key={recipe.id} className="px-4 py-2 hover:bg-red-50 cursor-pointer text-gray-800" onClick={() => handleSelectRecipe(recipe.id)}>
-                        <div className="flex items-center">
-                          {recipe.type !== 'grocery' && <div className={`w-2 h-2 rounded-full mr-2 ${recipe.type === 'breakfast' ? 'bg-blue-500' : recipe.type === 'lunch' ? 'bg-amber-500' : recipe.type === 'dinner' ? 'bg-red-500' : 'bg-green-500'}`}></div>}
-                          <span>{recipe.name}</span>
-                        </div>
-                      </div>;
-                    })}
-                    <div className="border-t border-gray-100 my-1"></div>
-                  </div>}
-                  {/* Filtered Recipes */}
                   {filteredRecipes.length > 0 ? filteredRecipes.map(recipe => <div key={recipe.id} className="px-4 py-2 hover:bg-red-50 cursor-pointer text-gray-800" onClick={() => handleSelectRecipe(recipe.id)}>
                     {recipe ? <div className="flex items-center">
-                      <div className={`w-2 h-2 rounded-full mr-2 ${recipe.mealType === 'breakfast' ? 'bg-blue-500' : recipe.mealType === 'lunch' ? 'bg-amber-500' : recipe.mealType === 'dinner' ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                      <span>{recipe.mealName}</span>
+                      <span>{recipe.meal_name}</span>
                     </div> : <div className="text-gray-500">Unknown Recipe</div>}
                   </div>) : <div className="px-4 py-3 text-gray-500 text-center">
                     No recipes found

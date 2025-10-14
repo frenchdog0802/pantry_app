@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeftIcon, PlusIcon, TrashIcon, SearchIcon, CalendarIcon, EditIcon, XIcon, ImageIcon, PackageIcon, UtensilsIcon, FolderIcon, ChevronRightIcon, HomeIcon, MoreVerticalIcon, FolderPlusIcon, PencilIcon, AlertCircleIcon } from 'lucide-react';
+import { ArrowLeftIcon, PlusIcon, TrashIcon, SearchIcon, CalendarIcon, EditIcon, XIcon, ImageIcon, PackageIcon, FolderIcon, ChevronRightIcon, HomeIcon, MoreVerticalIcon, FolderPlusIcon, PencilIcon, AlertCircleIcon } from 'lucide-react';
 import { usePantry } from '../contexts/PantryContext';
-import { useAuth } from '../contexts/AuthContext';
-import { IngredientEntry, Recipe, Folder } from '../api/Types';
+import { IngredientEntry, Folder, Recipe } from '../api/Types';
+
+// Using shared Recipe type from api/Types
 
 interface RecipeManagerProps {
   onBack: () => void;
@@ -17,6 +18,7 @@ export function RecipeManager({
     updateRecipe,
     deleteRecipe,
     updatePantryItems,
+    addPantryItem,
     fetchAllRecipes,
     fetchAllFolders,
     addFolder,
@@ -25,8 +27,6 @@ export function RecipeManager({
     folders: savedFolders,
     pantryItems
   } = usePantry();
-
-  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddRecipe, setShowAddRecipe] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
@@ -41,18 +41,14 @@ export function RecipeManager({
   const [showFolderActions, setShowFolderActions] = useState<string | null>(null);
   const [showDeleteFolderConfirmation, setShowDeleteFolderConfirmation] = useState(false);
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
-  const [currentIngredient, setCurrentIngredient] = useState<IngredientEntry>({
-    name: '',
-    quantity: 1,
-    unit: ''
-  });
+  const [currentIngredient, setCurrentIngredient] = useState<IngredientEntry>({} as IngredientEntry);
+  const [newRecipeError, setNewRecipeError] = useState<string>('');
   const [newRecipe, setNewRecipe] = useState<Recipe>({
     id: '',
-    date: new Date().toISOString().split('T')[0],
-    mealName: '',
+    meal_name: '',
     ingredients: [],
     image: null,
-    folderId: '' as string,
+    folder_id: '' as string,
     instructions: [] as string[],
   });
   // Load folders from localStorage
@@ -106,13 +102,13 @@ export function RecipeManager({
   // Add folder to recipe if it doesn't exist
   useEffect(() => {
     // Check if recipes have folderId and update them if they don't
-    const recipesWithoutFolder = storedRecipes.filter(recipe => !recipe.folderId);
+    const recipesWithoutFolder = storedRecipes.filter(recipe => !recipe.folder_id);
     if (recipesWithoutFolder.length > 0) {
       recipesWithoutFolder.forEach(recipe => {
         // Default to uncategorized folder
         updateRecipe({
           ...recipe,
-          folderId: 'uncategorized'
+          folder_id: 'uncategorized'
         });
       });
     }
@@ -120,10 +116,10 @@ export function RecipeManager({
 
   // Filter recipes based on search query
   const filteredRecipes = storedRecipes.filter(recipe => {
-    if (currentFolder && recipe.folderId !== currentFolder.id) {
+    if (currentFolder && recipe.folder_id !== currentFolder.id) {
       return false;
     }
-    const matchesSearch = recipe.ingredients && recipe.ingredients.some(item => item.name && item.name.toLowerCase().includes(searchQuery.toLowerCase())) || recipe.mealName && recipe.mealName.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = recipe.ingredients && recipe.ingredients.some(item => item.name && item.name.toLowerCase().includes(searchQuery.toLowerCase())) || recipe.meal_name && recipe.meal_name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
 
@@ -157,10 +153,10 @@ export function RecipeManager({
   const handleDeleteFolder = () => {
     if (!folderToDelete) return;
     // Move all recipes in this folder to Uncategorized
-    storedRecipes.filter(recipe => recipe.folderId === folderToDelete.id).forEach(recipe => {
+    storedRecipes.filter(recipe => recipe.folder_id === folderToDelete.id).forEach(recipe => {
       updateRecipe({
         ...recipe,
-        folderId: 'uncategorized'
+        folder_id: 'uncategorized'
       });
     });
     // Remove the folder
@@ -176,6 +172,7 @@ export function RecipeManager({
 
   const handleSelectPantryItem = (item: any) => {
     setCurrentIngredient({
+      id: item.ingredient_id,
       name: item.name,
       quantity: 1,
       unit: item.unit
@@ -184,9 +181,16 @@ export function RecipeManager({
 
   const handleAddIngredient = () => {
     if (!currentIngredient.name) return;
-    const updatedIngredients = [...newRecipe.ingredients, currentIngredient];
-    setNewRecipe({ ...newRecipe, ingredients: updatedIngredients });
+    if (isEditing && selectedRecipe) {
+      const updatedIngredients = [...selectedRecipe.ingredients, currentIngredient];
+      setSelectedRecipe({ ...selectedRecipe, ingredients: updatedIngredients });
+    } else {
+      const updatedIngredients = [...newRecipe.ingredients, currentIngredient];
+      setNewRecipe({ ...newRecipe, ingredients: updatedIngredients });
+    }
+    setNewRecipeError('');
     setCurrentIngredient({
+      id: currentIngredient.id,
       name: '',
       quantity: 1,
       unit: ''
@@ -293,46 +297,60 @@ export function RecipeManager({
       setSelectedRecipe(null);
       setIsEditing(false);
     } else {
+      if (newRecipe.ingredients.length === 0) {
+        setNewRecipeError('Please add at least one ingredient.');
+        return;
+      }
+      // Skip pantry availability validation per request
       const recipeToAdd = {
         ...newRecipe,
-        folderId: newRecipe.folderId || (currentFolder ? currentFolder.id : 'uncategorized')
+        folder_id: newRecipe.folder_id || (currentFolder ? currentFolder.id : 'uncategorized')
       };
       addRecipe(recipeToAdd);
       setNewRecipe({
         id: '',
-        date: new Date().toISOString().split('T')[0],
-        mealName: '',
+        meal_name: '',
         ingredients: [],
         image: null,
-        folderId: currentFolder ? currentFolder.id : 'uncategorized',
+        folder_id: currentFolder ? currentFolder.id : 'uncategorized',
         instructions: [] as string[],
       });
+      setNewRecipeError('');
       setShowAddRecipe(false);
     }
   };
 
   // Add items from recipe to pantry
   const handleAddItemsToPantry = (ingredients: IngredientEntry[]) => {
-    const updatedPantry = [...pantryItems];
+    // Determine which items already exist and should be updated vs created
+    const nameToExisting = new Map(pantryItems.map(p => [p.name.toLowerCase(), p]));
+
+    const itemsToUpdate = [] as typeof pantryItems;
+    const itemsToCreate = [] as Array<Omit<typeof pantryItems[number], 'id'>>;
+
     ingredients.forEach(item => {
-      // Check if item already exists in pantry
-      const existingItemIndex = updatedPantry.findIndex(pantryItem => pantryItem.name.toLowerCase() === item.name.toLowerCase());
-      if (existingItemIndex >= 0) {
-        // Update quantity if item exists
-        updatedPantry[existingItemIndex] = {
-          ...updatedPantry[existingItemIndex],
-          quantity: updatedPantry[existingItemIndex].quantity + item.quantity
-        };
+      const key = item.name.toLowerCase();
+      const existing = nameToExisting.get(key);
+      if (existing) {
+        itemsToUpdate.push({
+          ...existing,
+          quantity: existing.quantity + item.quantity
+        });
       } else if (item.name.trim()) {
-        // Add new item to pantry
-        updatedPantry.push({
+        itemsToCreate.push({
           name: item.name,
           quantity: item.quantity,
           unit: item.unit
         });
       }
     });
-    updatePantryItems(updatedPantry);
+
+    if (itemsToUpdate.length > 0) {
+      updatePantryItems(itemsToUpdate);
+    }
+    if (itemsToCreate.length > 0) {
+      itemsToCreate.forEach(newItem => addPantryItem(newItem));
+    }
   };
 
   const filteredPantryItems = pantryItems.filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -342,7 +360,7 @@ export function RecipeManager({
   const handleAddRecipeInFolder = (folder: Folder) => {
     setNewRecipe({
       ...newRecipe,
-      folderId: folder.id
+      folder_id: folder.id
     });
     setShowAddRecipe(true);
   };
@@ -398,7 +416,7 @@ export function RecipeManager({
                   </h3>
                 </div>
                 <p className="text-sm text-gray-500">
-                  {storedRecipes.filter(r => r.folderId === folder.id).length}{' '}
+                  {storedRecipes.filter(r => r.folder_id === folder.id).length}{' '}
                   recipes
                 </p>
               </div>
@@ -462,7 +480,7 @@ export function RecipeManager({
           <button onClick={() => {
             setNewRecipe({
               ...newRecipe,
-              folderId: currentFolder.id
+              folder_id: currentFolder.id
             });
             setShowAddRecipe(true);
           }} className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-medium py-3 px-4 rounded-xl mb-6 shadow-sm transition-colors">
@@ -486,9 +504,7 @@ export function RecipeManager({
                     <div className="flex items-center mb-1">
                       {recipe.image && <ImageIcon size={16} className="ml-2 text-gray-400" />}
                     </div>
-                    <p className="text-gray-500 text-sm">
-                      {new Date(recipe.date).toLocaleDateString()}
-                    </p>
+                    <p className="text-gray-500 text-sm">&nbsp;</p>
                     <p className="text-gray-500 text-xs mt-1">
                       {recipe.ingredients.length} ingredient
                       {recipe.ingredients.length !== 1 ? 's' : ''}
@@ -528,30 +544,18 @@ export function RecipeManager({
             {isEditing ?
               // Edit Recipe Form
               <div className="space-y-4">
-                <div className="flex gap-4">
-                  <div className="w-1/2">
-                    <label className="block text-gray-700 text-sm font-medium mb-1">
-                      Date
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <CalendarIcon size={16} className="text-gray-400" />
-                      </div>
-                      <input type="date" value={selectedRecipe.date} onChange={e => setSelectedRecipe({
-                        ...selectedRecipe,
-                        date: e.target.value
-                      })} className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg" />
-                    </div>
-                  </div>
-                  <div className="w-1/2">
-                    <label className="block text-gray-700 text-sm font-medium mb-1">
-                      Meal Name
-                    </label>
-                    <input type="text" value={selectedRecipe.mealName} onChange={e => setSelectedRecipe({
-                      ...selectedRecipe,
-                      mealName: e.target.value
-                    })} className="w-full p-2 border border-gray-200 rounded-lg" placeholder="Meal name" />
-                  </div>
+                <div>
+                  <label htmlFor="meal-name-edit" className="block text-gray-700 mb-2">
+                    Meal Name
+                  </label>
+                  <input
+                    id="meal-name-edit"
+                    type="text"
+                    value={selectedRecipe.meal_name}
+                    onChange={e => setSelectedRecipe({ ...selectedRecipe, meal_name: e.target.value })}
+                    placeholder="Enter what you cooked"
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  />
                 </div>
                 {/* Recipe Image */}
                 <div>
@@ -578,25 +582,34 @@ export function RecipeManager({
                     </button>
                   </div>}
                 </div>
-                {/* Items List */}
+                {/* Ingredients Section (match add form) */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <label className="block text-gray-700 text-sm font-medium">
-                      Ingredients
-                    </label>
-                    <button onClick={handleAddRecipeItem} className="text-sm flex items-center text-red-600 hover:text-red-700">
+                    <label className="block text-gray-700">Ingredients Used</label>
+                    <button onClick={() => setShowIngredientSelector(true)} className="text-sm flex items-center text-red-600 hover:text-red-700">
                       <PlusIcon size={16} className="mr-1" />
                       Add Ingredient
                     </button>
                   </div>
-                  {selectedRecipe.ingredients.map((item, index) => <div key={index} className="flex gap-2 items-center mb-2">
-                    <input type="text" value={item.name} onChange={e => handleUpdateRecipeItem(index, 'name', e.target.value)} placeholder="Ingredient name" className="flex-1 p-2 border border-gray-200 rounded-lg" />
-                    <input type="number" min="1" value={item.quantity} onChange={e => handleUpdateRecipeItem(index, 'quantity', e.target.value)} className="w-16 p-2 border border-gray-200 rounded-lg" />
-                    <input type="text" value={item.unit} onChange={e => handleUpdateRecipeItem(index, 'unit', e.target.value)} placeholder="Unit" className="w-16 p-2 border border-gray-200 rounded-lg" />
-                    <button onClick={() => handleRemoveRecipeItem(index)} className="p-1 rounded-full hover:bg-red-50 text-red-500">
-                      <TrashIcon size={16} />
-                    </button>
-                  </div>)}
+                  {selectedRecipe.ingredients.length === 0 ? (
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center text-gray-500">
+                      No ingredients added yet
+                    </div>
+                  ) : (
+                    <ul className="bg-gray-50 border border-gray-200 rounded-xl divide-y divide-gray-200">
+                      {selectedRecipe.ingredients.map((ingredient, index) => (
+                        <li key={index} className="flex justify-between items-center p-3">
+                          <div>
+                            <p className="font-medium text-gray-800">{ingredient.name}</p>
+                            <p className="text-sm text-gray-500">{ingredient.quantity} {ingredient.unit}</p>
+                          </div>
+                          <button onClick={() => handleRemoveRecipeItem(index)} className="p-1 rounded-full hover:bg-red-50 text-red-500">
+                            <TrashIcon size={16} />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
                 <div className="flex gap-2 pt-4">
                   <button onClick={() => {
@@ -615,11 +628,9 @@ export function RecipeManager({
                 <div className="flex justify-between">
                   <div>
                     <h3 className="font-bold text-xl text-gray-800">
-                      {selectedRecipe.mealName}
+                      {selectedRecipe.meal_name}
                     </h3>
-                    <p className="text-gray-500 mt-1">
-                      {new Date(selectedRecipe.date).toLocaleDateString()}
-                    </p>
+                    <p className="text-gray-500 mt-1">&nbsp;</p>
                   </div>
                 </div>
                 {selectedRecipe.image && <div className="rounded-xl overflow-hidden h-40 my-4">
@@ -645,7 +656,19 @@ export function RecipeManager({
                     <EditIcon size={16} className="mr-1" />
                     Edit Recipe
                   </button>
-                  <button onClick={() => handleAddItemsToPantry(selectedRecipe.ingredients)} className="w-1/2 bg-green-50 text-green-600 border border-green-100 py-2 rounded-lg flex items-center justify-center">
+                  <button
+                    onClick={() =>
+                      handleAddItemsToPantry(
+                        selectedRecipe.ingredients.map((ingredient, idx) => ({
+                          id: `ingredient-${idx}-${Date.now()}`,
+                          name: ingredient.name,
+                          quantity: ingredient.quantity,
+                          unit: ingredient.unit
+                        }))
+                      )
+                    }
+                    className="w-1/2 bg-green-50 text-green-600 border border-green-100 py-2 rounded-lg flex items-center justify-center"
+                  >
                     <PackageIcon size={16} className="mr-1" />
                     Add to Pantry
                   </button>
@@ -667,20 +690,7 @@ export function RecipeManager({
                 <label htmlFor="meal-name" className="block text-gray-700 mb-2">
                   Meal Name
                 </label>
-                <input type="text" id="meal-name" value={newRecipe.mealName} onChange={e => setNewRecipe({ ...newRecipe, mealName: e.target.value })} placeholder="Enter what you cooked" className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" />
-              </div>
-
-              {/* Date Selector */}
-              <div>
-                <label htmlFor="meal-date" className="block text-gray-700 mb-2">
-                  Date
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <CalendarIcon size={18} className="text-gray-400" />
-                  </div>
-                  <input type="date" id="meal-date" value={newRecipe.date} onChange={e => setNewRecipe({ ...newRecipe, date: e.target.value })} className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" />
-                </div>
+                <input type="text" id="meal-name" value={newRecipe.meal_name} onChange={e => setNewRecipe({ ...newRecipe, meal_name: e.target.value })} placeholder="Enter what you cooked" className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" />
               </div>
               {/* Image Upload Section */}
               <div>
@@ -731,7 +741,8 @@ export function RecipeManager({
                 </ul>}
               </div>
 
-              <button onClick={handleSaveRecipe} disabled={!newRecipe.mealName.trim()} className={`w-full py-3 px-4 rounded-xl font-medium ${newRecipe.mealName.trim() ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} transition-colors`}>
+              {newRecipeError && <p className="text-red-500 text-sm mb-2">{newRecipeError}</p>}
+              <button onClick={handleSaveRecipe} disabled={!newRecipe.meal_name.trim() || newRecipe.ingredients.length === 0} className={`w-full py-3 px-4 rounded-xl font-medium ${newRecipe.meal_name.trim() && newRecipe.ingredients.length > 0 ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} transition-colors`}>
                 Log This Meal
               </button>
             </div>

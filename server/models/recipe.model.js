@@ -4,7 +4,7 @@ const RecipeSchema = new mongoose.Schema(
     {
         user_id: { type: String, required: true },
         folder_id: { type: String },
-        title: { type: String, required: true },
+        meal_name: { type: String, required: true },
         description: { type: String },
         steps: [{ type: String }], // can later be changed to ObjectId refs
         image_url: { type: String },

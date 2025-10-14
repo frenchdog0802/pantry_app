@@ -2,12 +2,12 @@ import mongoose from "mongoose";
 
 const RecipeIngredientSchema = new mongoose.Schema(
     {
-        recipe_id: { type: Number, required: true },
-        ingredient_id: { type: Number, required: true },
+        recipe_id: { type: String, required: true },
+        ingredient_id: { type: String, required: true },
         quantity: { type: Number, required: true },
         unit: { type: String },
         note: { type: String },
-        display_order: { type: Number },
+        // display_order: { type: Number },
         createdAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
         updatedAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
     },

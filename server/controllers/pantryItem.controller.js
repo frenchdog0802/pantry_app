@@ -157,11 +157,59 @@ export const deletePantryItem = async (req, res) => {
     }
 };
 
+// Bulk update pantry items
+export const updateAllPantryItems = async (req, res) => {
+    try {
+        const items = req.body;
+        if (!Array.isArray(items)) {
+            return res.status(400).json({ message: 'Request body must be an array of items' });
+        }
+
+        const updatedResults = [];
+
+        for (const item of items) {
+            if (!item.id) {
+                return res.status(400).json({ message: 'Each item must include an id' });
+            }
+
+            const updateFields = {};
+            if (item.quantity !== undefined) updateFields.quantity = item.quantity;
+            if (item.unit !== undefined) updateFields.unit = item.unit;
+            if (item.notes !== undefined) updateFields.notes = item.notes;
+
+            const updated = await PantryItem.findByIdAndUpdate(
+                item.id,
+                updateFields,
+                { new: true }
+            );
+
+            if (!updated) {
+                return res.status(404).json({ message: `Pantry item not found: ${item.id}` });
+            }
+
+            const ingredient = await Ingredient.findById(updated.ingredient_id);
+            updatedResults.push({
+                id: updated._id.toString(),
+                quantity: updated.quantity,
+                unit: updated.unit,
+                notes: updated.notes,
+                name: ingredient ? ingredient.name : 'Unknown',
+            });
+        }
+
+        res.json(updatedResults);
+    } catch (err) {
+        console.error('updateAllPantryItems error:', err);
+        res.status(400).json({ message: err.message });
+    }
+};
+
 export default {
     insertAllPantryItems,
     getAllPantryItems,
     getPantryItemById,
     createPantryItem,
     updatePantryItem,
-    deletePantryItem
+    deletePantryItem,
+    updateAllPantryItems
 };
