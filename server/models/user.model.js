@@ -3,11 +3,15 @@ import bcrypt from "bcrypt";
 
 const UserSchema = new mongoose.Schema(
   {
+    first_name: { type: String, required: true, trim: true },
+    last_name: { type: String, required: true, trim: true },
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, trim: true },
     password_hash: { type: String, required: true },
     role: { type: String, default: "user" },
     ConnectAccount: { type: String },
+    googleId: { type: String },
+    picture: { type: String },
     createdAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
     updatedAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
   },

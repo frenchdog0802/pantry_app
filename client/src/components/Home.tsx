@@ -29,7 +29,7 @@ export function Home({
     {/* Header */}
     <header className="bg-gradient-to-r from-orange-500 to-red-600 text-white p-5 shadow-md">
       <div className="container mx-auto flex justify-between items-center">
-        <h1 className="text-2xl font-bold">OrganizEat</h1>
+        <h1 className="text-2xl font-bold">ManageEat</h1>
         <div className="flex items-center">
           {/* <button onClick={onViewCalendar} className="p-2 rounded-full hover:bg-white/20 transition-colors mr-2" aria-label="View Calendar">
             <CalendarIcon size={24} />

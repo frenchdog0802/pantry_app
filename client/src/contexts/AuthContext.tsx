@@ -1,4 +1,6 @@
 import React, { useEffect, useState, createContext, useContext } from 'react';
+import { auth } from '../api/Api-auth';
+import { authHelper } from '../api/Auth-helper.ts';
 interface User {
   id: string;
   name: string;
@@ -10,6 +12,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
+  googleLogin?: (token: string, onLoginSuccess: () => void) => void;
 }
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{
@@ -17,56 +20,73 @@ export const AuthProvider: React.FC<{
 }> = ({
   children
 }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  // Check if user is already logged in
-  useEffect(() => {
-    const checkAuth = async () => {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-      setLoading(false);
-    };
-    checkAuth();
-  }, []);
-  const login = async (email: string, password: string): Promise<boolean> => {
-    setLoading(true);
-    // Simulate API call with a delay
-    return new Promise(resolve => {
-      setTimeout(() => {
-        // Mock authentication - in a real app, this would be an API call
-        if (email && password) {
-          // For demo purposes, any non-empty email/password works
-          const user = {
-            id: '1',
-            name: email.split('@')[0],
-            email
-          };
-          setUser(user);
-          localStorage.setItem('user', JSON.stringify(user));
-          setLoading(false);
-          resolve(true);
-        } else {
-          setLoading(false);
-          resolve(false);
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
+    // Check if user is already logged in
+    useEffect(() => {
+      const checkAuth = async () => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
         }
-      }, 1000);
-    });
+        setLoading(false);
+      };
+      checkAuth();
+    }, []);
+    const login = async (email: string, password: string): Promise<boolean> => {
+      setLoading(true);
+      // Simulate API call with a delay
+      return new Promise(resolve => {
+        setTimeout(() => {
+          // Mock authentication - in a real app, this would be an API call
+          if (email && password) {
+            // For demo purposes, any non-empty email/password works
+            const user = {
+              id: '1',
+              name: email.split('@')[0],
+              email
+            };
+            setUser(user);
+            localStorage.setItem('user', JSON.stringify(user));
+            setLoading(false);
+            resolve(true);
+          } else {
+            setLoading(false);
+            resolve(false);
+          }
+        }, 1000);
+      });
+    };
+    const logout = () => {
+      setUser(null);
+      localStorage.removeItem('user');
+    };
+
+    const googleLogin = (token: string, onLoginSuccess: () => void) => {
+      setLoading(true);
+      auth.googleAuthLogin(token).then((data: any) => {
+        if (data.error) {
+          setLoading(false);
+        } else {
+          setUser(data.user);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          authHelper.authenticate(data, onLoginSuccess);
+        }
+        setLoading(false);
+      });
+    };
+    const value = {
+      user,
+      loading,
+      login,
+      logout,
+      isAuthenticated: !!user,
+      googleLogin
+    };
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
   };
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-  };
-  const value = {
-    user,
-    loading,
-    login,
-    logout,
-    isAuthenticated: !!user
-  };
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

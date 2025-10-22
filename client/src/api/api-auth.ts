@@ -1,29 +1,12 @@
-// src/api/auth.ts
+// src/api/Api-auth.ts
 import { api } from './Client';
 import type { User } from './Types';
 
-// Signin function
-const signin = async (user: User) => {
-  try {
-    // Use the `api.post` method to make the POST request
-    const response = await api.post('/auth/signin', user);
-    return response;
-  } catch (err) {
-    console.error('Signin error:', err);
-    throw err; // Optional: You can rethrow or handle the error as needed
-  }
-};
+export const auth = {
+  signin: (user: User) => api.post<User>('/api/auth/signin', user),
 
-// Signout function
-const signout = async () => {
-  try {
-    // Use the `api.get` method to make the GET request
-    const response = await api.get('/auth/signout');
-    return response;
-  } catch (err) {
-    console.error('Signout error:', err);
-    throw err; // Optional: You can rethrow or handle the error as needed
-  }
-};
+  signout: () => api.get('/api/auth/signout'),
 
-export { signin, signout };
+  googleAuthLogin: (token: string) =>
+    api.post<{ token: string }>('/api/auth/google-login', { token }),
+};

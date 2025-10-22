@@ -15,9 +15,9 @@ import {
   DialogActions,
 } from "@mui/material";
 import { styled, useTheme } from "@mui/material/styles";
-import auth from "./auth-helper.js";
+import auth from "../api/auth-helper.js";
 import { Navigate, useLocation, Link as RouterLink } from "react-router-dom";
-import { signin } from "./api-auth.js";
+import { signin } from "../api/api-auth.js";
 
 // Full-page wrapper
 const SigninContainer = styled(Box)(({ theme }) => ({
