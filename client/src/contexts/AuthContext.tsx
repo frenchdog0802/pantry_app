@@ -7,6 +7,7 @@ interface User {
   email: string;
 }
 interface AuthContextType {
+  hasFetched: boolean;
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
@@ -59,6 +60,7 @@ export const AuthProvider: React.FC<{
     };
     const logout = () => {
       setUser(null);
+      authHelper.clearJWT();
       localStorage.removeItem('user');
     };
 
@@ -70,7 +72,7 @@ export const AuthProvider: React.FC<{
         } else {
           setUser(data.user);
           localStorage.setItem('user', JSON.stringify(data.user));
-          authHelper.authenticate(data, onLoginSuccess);
+          authHelper.authenticate(data.token, onLoginSuccess);
         }
         setLoading(false);
       });
@@ -81,7 +83,7 @@ export const AuthProvider: React.FC<{
       login,
       logout,
       isAuthenticated: !!user,
-      googleLogin
+      googleLogin,
     };
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
   };

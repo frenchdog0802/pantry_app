@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ChefHatIcon, CalendarIcon, ClipboardListIcon, PackageIcon, ShoppingCartIcon, UtensilsIcon, SettingsIcon } from 'lucide-react';
 import { usePantry } from '../contexts/PantryContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,11 +18,27 @@ export function Home({
 }: HomeProps) {
   const {
     shoppingList,
-    pantryItems
+    pantryItems,
+    queryPantryData,
   } = usePantry();
   const {
-    user
+    user,
   } = useAuth();
+
+  const lastFetchedUserId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      lastFetchedUserId.current = null; // Reset on logout
+      return;
+    }
+
+    // Fetch only if user changed (different user) or first time
+    if (lastFetchedUserId.current !== user.id) { // Assuming user has an 'id' property; adjust if it's user.uid or similar
+      queryPantryData();
+      lastFetchedUserId.current = user.id;
+    }
+  }, [user]); // Depend on user to react to login/logout
   // Count items that need to be bought (in shopping list)
   const itemsToBuy = shoppingList.filter(item => !item.checked).length;
   return <div className="flex flex-col w-full min-h-screen bg-white">
@@ -55,8 +71,11 @@ export function Home({
         </h3>
         <div className="grid grid-cols-2 gap-6">
           <div className="bg-gray-50 p-5 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:bg-pink-50 hover:border-pink-100 transition-colors" onClick={() => onManagePantry('inventory')}>
-            <div className="text-3xl font-bold text-red-600 mb-1">
-              {pantryItems.length}
+            <div className="flex items-center">
+              <div className="text-3xl font-bold text-red-600 mb-1 mr-2">
+                {pantryItems.length}
+              </div>
+              {pantryItems.length > 0 && <PackageIcon size={20} className="text-red-600" />}
             </div>
             <p className="text-gray-600">Items in Pantry</p>
           </div>

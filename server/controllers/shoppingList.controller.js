@@ -30,7 +30,7 @@ export const insertAllShoppingListItems = async (req, res) => {
             }
 
             const shoppingListItem = await ShoppingListItem.create({
-                user_id: 1, // Temporary user_id, replace with actual user ID from auth middleware as needed
+                user_id: userId,
                 ingredient_id: ingredientId,
                 quantity: item.quantity,
                 unit: item.unit || ingredient.default_unit,
@@ -53,7 +53,7 @@ export const createShoppingListItem = async (req, res) => {
         const item = req.body;
 
         let ingredientObj = undefined;
-
+        const userId = req.auth.user_id;
         if (!ingredientObj) {
             if (!item.name) {
                 throw new Error("Missing 'name' field when ingredient_id is not provided");
@@ -74,7 +74,7 @@ export const createShoppingListItem = async (req, res) => {
         }
 
         const shoppingListItem = await ShoppingListItem.create({
-            user_id: 1, // Temporary user_id, replace with actual user ID from auth middleware as needed
+            user_id: req.auth.user_id, // Temporary user_id, replace with actual user ID from auth middleware as needed
             ingredient_id: ingredientObj._id,
             quantity: item.quantity,
             unit: item.unit || (typeof ingredientObj !== "undefined" && ingredientObj.default_unit ? ingredientObj.default_unit : ""),
@@ -97,7 +97,10 @@ export const createShoppingListItem = async (req, res) => {
 // Get all shopping list items
 export const getAllShoppingListItems = async (req, res) => {
     try {
-        const shoppingListItems = await ShoppingListItem.find();
+        const userId = req.auth.user_id;
+        console.log("Fetching shopping list items for user ID:", userId);
+        const shoppingListItems = await ShoppingListItem.find({ user_id: userId });
+        console.log("Fetched shopping list items:", shoppingListItems);
         // find name from ingredient model
         const itemsWithNames = await Promise.all(shoppingListItems.map(async (item) => {
             const ingredient = await Ingredient.findById(item.ingredient_id);

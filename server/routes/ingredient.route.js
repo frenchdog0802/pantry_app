@@ -1,14 +1,14 @@
 import express from "express";
 import ingredientCtrl from "../controllers/ingredient.controller.js";
-import { authenticateJWT } from "../controllers/auth.controller.js";
+import auth from "../controllers/auth.controller.js";
 
 const router = express.Router();
-router.post('/bulk', authenticateJWT, ingredientCtrl.insertAllIngredients);
-router.get('/', authenticateJWT, ingredientCtrl.getAllIngredients);
-router.get('/:id', authenticateJWT, ingredientCtrl.getIngredientById);
-router.post('/', authenticateJWT, ingredientCtrl.createIngredient);
-router.put('/:id', authenticateJWT, ingredientCtrl.updateIngredient);
-router.delete('/:id', authenticateJWT, ingredientCtrl.deleteIngredient);
+router.post('/bulk', auth.requireSignin, ingredientCtrl.insertAllIngredients);
+router.get('/', auth.requireSignin, ingredientCtrl.getAllIngredients);
+router.get('/:id', auth.requireSignin, ingredientCtrl.getIngredientById);
+router.post('/', auth.requireSignin, ingredientCtrl.createIngredient);
+router.put('/:id', auth.requireSignin, ingredientCtrl.updateIngredient);
+router.delete('/:id', auth.requireSignin, ingredientCtrl.deleteIngredient);
 
 
 export default router;

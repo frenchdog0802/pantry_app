@@ -3,7 +3,8 @@ import Recipe from "../models/recipe.model.js";
 // Get all meal plans
 export const getAllMealPlans = async (req, res) => {
     try {
-        const mealPlans = await MealPlan.find();
+        const userId = req.auth.user_id;
+        const mealPlans = await MealPlan.find({ user_id: userId });
         // search for recipe name and image in req if exists
         const returnedMealPlans = [];
         for (const mealPlan of mealPlans) {
@@ -12,6 +13,7 @@ export const getAllMealPlans = async (req, res) => {
             if (recipe) {
                 const mealPlanObj = {
                     id: mealPlan._id,
+                    recipe_id: mealPlan.recipe_id,
                     meal_name: recipe.meal_name,
                     image_url: recipe.image || null,
                     meal_type: mealPlan.meal_type,
@@ -42,7 +44,7 @@ export const createMealPlan = async (req, res) => {
     const request = req.body;
     try {
         const newMealPlan = await MealPlan.create({
-            user_id: 1, // Hardcoded user_id for now
+            user_id: req.auth.user_id,
             recipe_id: request.recipe_id,
             meal_type: request.meal_type,
             serving_date: request.serving_date,

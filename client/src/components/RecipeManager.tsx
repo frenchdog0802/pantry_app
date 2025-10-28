@@ -42,6 +42,7 @@ export function RecipeManager({
   const [showDeleteFolderConfirmation, setShowDeleteFolderConfirmation] = useState(false);
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
   const [currentIngredient, setCurrentIngredient] = useState<IngredientEntry>({} as IngredientEntry);
+  const [recipes, setRecipes] = useState<Recipe[]>(storedRecipes);
   const [newRecipeError, setNewRecipeError] = useState<string>('');
   const [newRecipe, setNewRecipe] = useState<Recipe>({
     id: '',
@@ -51,7 +52,6 @@ export function RecipeManager({
     folder_id: '' as string,
     instructions: [] as string[],
   });
-  // Load folders from localStorage
   useEffect(() => {
     fetchAllRecipes();
     fetchAllFolders();
@@ -99,23 +99,9 @@ export function RecipeManager({
   };
 
 
-  // Add folder to recipe if it doesn't exist
-  useEffect(() => {
-    // Check if recipes have folderId and update them if they don't
-    const recipesWithoutFolder = storedRecipes.filter(recipe => !recipe.folder_id);
-    if (recipesWithoutFolder.length > 0) {
-      recipesWithoutFolder.forEach(recipe => {
-        // Default to uncategorized folder
-        updateRecipe({
-          ...recipe,
-          folder_id: 'uncategorized'
-        });
-      });
-    }
-  }, [storedRecipes]);
 
   // Filter recipes based on search query
-  const filteredRecipes = storedRecipes.filter(recipe => {
+  const filteredRecipes = recipes.filter(recipe => {
     if (currentFolder && recipe.folder_id !== currentFolder.id) {
       return false;
     }
@@ -130,7 +116,6 @@ export function RecipeManager({
       id: `folder-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       name: newFolderName.trim(),
       icon: 'FolderIcon',
-      createdAt: Date.now()
     };
     setFolders([...(folders ?? []), newFolder]);
     setNewFolderName('');
@@ -153,12 +138,16 @@ export function RecipeManager({
   const handleDeleteFolder = () => {
     if (!folderToDelete) return;
     // Move all recipes in this folder to Uncategorized
-    storedRecipes.filter(recipe => recipe.folder_id === folderToDelete.id).forEach(recipe => {
+    recipes.filter(recipe => recipe.folder_id === folderToDelete.id).forEach(recipe => {
       updateRecipe({
         ...recipe,
         folder_id: 'uncategorized'
       });
     });
+    setRecipes(prev => prev.map(recipe => recipe.folder_id === folderToDelete.id ? {
+      ...recipe,
+      folder_id: 'uncategorized'
+    } : recipe));
     // Remove the folder
     setFolders((folders ?? []).filter(folder => folder.id !== folderToDelete.id));
     setFolderToDelete(null);
@@ -225,53 +214,6 @@ export function RecipeManager({
     }
   };
 
-  // Add a new item to the recipe
-  const handleAddRecipeItem = () => {
-    if (isEditing && selectedRecipe) {
-      setSelectedRecipe({
-        ...selectedRecipe,
-        ingredients: [...selectedRecipe.ingredients, {
-          name: '',
-          quantity: 1,
-          unit: '',
-        }]
-      });
-    } else {
-      setNewRecipe({
-        ...newRecipe,
-        ingredients: [...newRecipe.ingredients, {
-          name: '',
-          quantity: 1,
-          unit: '',
-        }]
-      });
-    }
-  };
-
-  // Update recipe item
-  const handleUpdateRecipeItem = (index: number, field: keyof IngredientEntry, value: any) => {
-    if (isEditing && selectedRecipe) {
-      const updatedIngredients = [...selectedRecipe.ingredients];
-      updatedIngredients[index] = {
-        ...updatedIngredients[index],
-        [field]: field === 'quantity' ? parseFloat(value) || 0 : value
-      };
-      setSelectedRecipe({
-        ...selectedRecipe,
-        ingredients: updatedIngredients,
-      });
-    } else {
-      const updatedIngredients = [...newRecipe.ingredients];
-      updatedIngredients[index] = {
-        ...updatedIngredients[index],
-        [field]: field === 'quantity' ? parseFloat(value) || 0 : value
-      };
-      setNewRecipe({
-        ...newRecipe,
-        ingredients: updatedIngredients,
-      });
-    }
-  };
 
   // Remove recipe item
   const handleRemoveRecipeItem = (index: number) => {
@@ -294,6 +236,7 @@ export function RecipeManager({
   const handleSaveRecipe = () => {
     if (isEditing && selectedRecipe) {
       updateRecipe(selectedRecipe);
+      setRecipes(prev => prev.map(r => r.id === selectedRecipe.id ? selectedRecipe : r));
       setSelectedRecipe(null);
       setIsEditing(false);
     } else {
@@ -307,6 +250,7 @@ export function RecipeManager({
         folder_id: newRecipe.folder_id || (currentFolder ? currentFolder.id : 'uncategorized')
       };
       addRecipe(recipeToAdd);
+      setRecipes(prev => [...prev, recipeToAdd]);
       setNewRecipe({
         id: '',
         meal_name: '',
@@ -318,6 +262,11 @@ export function RecipeManager({
       setNewRecipeError('');
       setShowAddRecipe(false);
     }
+  };
+
+  const handleDeleteRecipe = (recipeId: string) => {
+    setRecipes(prev => prev.filter(r => r.id !== recipeId));
+    deleteRecipe(recipeId);
   };
 
   // Add items from recipe to pantry
@@ -416,7 +365,7 @@ export function RecipeManager({
                   </h3>
                 </div>
                 <p className="text-sm text-gray-500">
-                  {storedRecipes.filter(r => r.folder_id === folder.id).length}{' '}
+                  {recipes.filter(r => r.folder_id === folder.id).length}{' '}
                   recipes
                 </p>
               </div>
@@ -517,7 +466,7 @@ export function RecipeManager({
                     }} className="p-1.5 rounded-full hover:bg-blue-50 text-blue-600" aria-label="Edit recipe">
                       <EditIcon size={18} />
                     </button>
-                    <button onClick={() => deleteRecipe(recipe.id)} className="p-1.5 rounded-full hover:bg-red-50 text-red-500" aria-label="Delete recipe">
+                    <button onClick={() => handleDeleteRecipe(recipe.id)} className="p-1.5 rounded-full hover:bg-red-50 text-red-500" aria-label="Delete recipe">
                       <TrashIcon size={18} />
                     </button>
                   </div>

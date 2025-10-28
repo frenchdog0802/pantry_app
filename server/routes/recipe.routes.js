@@ -1,12 +1,12 @@
 import express from "express";
 import recipeCtrl from "../controllers/recipe.controller.js";
-import { authenticateJWT } from "../controllers/auth.controller.js";
+import auth from "../controllers/auth.controller.js";
 const router = express.Router();
 
-router.get('/', authenticateJWT, recipeCtrl.getAllRecipes);
-router.get('/:id', authenticateJWT, recipeCtrl.getRecipeById);
-router.post('/', authenticateJWT, recipeCtrl.createRecipe);
-router.put('/:id', authenticateJWT, recipeCtrl.updateRecipe);
-router.delete('/:id', authenticateJWT, recipeCtrl.deleteRecipe);
+router.get('/', auth.requireSignin, recipeCtrl.getAllRecipes);
+router.get('/:id', auth.requireSignin, recipeCtrl.getRecipeById);
+router.post('/', auth.requireSignin, recipeCtrl.createRecipe);
+router.put('/:id', auth.requireSignin, recipeCtrl.updateRecipe);
+router.delete('/:id', auth.requireSignin, recipeCtrl.deleteRecipe);
 
 export default router;

@@ -8,6 +8,7 @@ import { shoppingListApi } from '../api/ShoppingList';
 import { mealPlanApi } from '../api/MealPlan';
 
 interface PantryContextType {
+  queryPantryData: () => void;
   recipes: Recipe[];
   fetchAllRecipes: () => void;
   addRecipe: (Recipe: Omit<Recipe, 'id'>) => void;
@@ -79,11 +80,9 @@ export function PantryProvider({
     }
   };
 
-  const addFolder = async (folder: Omit<Folder, 'id'>) => {
-    // temporary folder for optimistic UI
+  const addFolder = async (folder: Folder) => {
     const tempFolder: Folder = {
-      ...folder,
-      id: `folder-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      ...folder
     };
 
     setFolders(prev => [...prev, tempFolder]);
@@ -120,12 +119,10 @@ export function PantryProvider({
       console.error('Fetch recipes failed:', err);
     }
   }
-  const addRecipe = async (recipe: Omit<Recipe, 'id'>) => {
+  const addRecipe = async (recipe: Recipe) => {
     // temporary recipe for optimistic UI
     const tempRecipe: Recipe = {
       ...recipe,
-      id: `recipe-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      image: null // todo uplodad to S3 and get URL
     };
 
     setRecipes(prev => [...prev, tempRecipe]);
@@ -260,11 +257,10 @@ export function PantryProvider({
       console.error('Fetch meal plans failed:', err);
     }
   };
-  const addMealPlan = async (mealPlan: Omit<MealPlan, 'id'>) => {
+  const addMealPlan = async (mealPlan: MealPlan) => {
     // temporary meal plan for optimistic UI
     const tempMealPlan: MealPlan = {
       ...mealPlan,
-      id: `mealplan-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     };
 
     setMealPlan(prev => [...prev, tempMealPlan]);
@@ -291,17 +287,18 @@ export function PantryProvider({
     mealPlanApi.delete(id);
   };
 
-  // Initial data fetch 
-
-  useEffect(() => {
+  const queryPantryData = () => {
     fetchAllFolders();
     fetchAllRecipes();
     fetchAllPantryItems();
     fetchAllShoppingListItems();
     fetchAllMealPlans();
-  }, []);
+  };
+
+
 
   return <PantryContext.Provider value={{
+    queryPantryData,
     recipes,
     pantryItems,
     shoppingList,

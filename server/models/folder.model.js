@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const FolderSchema = new mongoose.Schema(
     {
-        // user_id: { type: String, required: true }, // Uncomment for multi-user support
+        user_id: { type: String, required: true },
         name: { type: String, required: true },
         color: { type: String },
         icon: { type: String, default: null },

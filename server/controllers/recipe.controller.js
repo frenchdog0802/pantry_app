@@ -7,7 +7,7 @@ export const createRecipe = async (req, res) => {
     const items = req.body;
     try {
         const newRecipe = await Recipe.create({
-            user_id: 1,//temporary user_id, replace with actual user ID from auth middleware as needed
+            user_id: req.auth.user_id,
             folder_id: items.folder_id,
             meal_name: items.meal_name,
             instructions: items.instructions,
@@ -39,7 +39,8 @@ export const createRecipe = async (req, res) => {
 // Get all recipes
 export const getAllRecipes = async (req, res) => {
     try {
-        const recipes = await Recipe.find();
+        const userId = req.auth.user_id;
+        const recipes = await Recipe.find({ user_id: userId });
         const returnRecipes = [];
         for (const recipe of recipes) {
             const returnIngredients = [];

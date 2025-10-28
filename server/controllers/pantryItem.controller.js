@@ -30,7 +30,7 @@ export const insertAllPantryItems = async (req, res) => {
             }
 
             const pantryItem = await PantryItem.create({
-                user_id: 1, // Temporary user_id, replace with actual user ID from auth middleware as needed
+                user_id: req.auth.user_id,
                 ingredient_id: ingredientId,
                 quantity: item.quantity,
                 unit: item.unit || ingredient.default_unit,
@@ -74,7 +74,7 @@ export const createPantryItem = async (req, res) => {
         }
 
         const pantryItem = await PantryItem.create({
-            user_id: 1, // Temporary user_id, replace with actual user ID from auth middleware as needed
+            user_id: req.auth.user_id,
             ingredient_id: ingredientObj._id,
             quantity: item.quantity,
             unit: item.unit || ingredientObj.default_unit,
@@ -99,7 +99,8 @@ export const createPantryItem = async (req, res) => {
 // Get all pantry items
 export const getAllPantryItems = async (req, res) => {
     try {
-        const pantryItems = await PantryItem.find();
+        const userId = req.auth.user_id;
+        const pantryItems = await PantryItem.find({ user_id: userId });
         // find name from ingredient model
         const itemsWithNames = await Promise.all(pantryItems.map(async (item) => {
             const ingredient = await Ingredient.findById(item.ingredient_id);

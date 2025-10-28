@@ -3,7 +3,8 @@ import Folder from "../models/folder.model.js";
 // Get all folders
 export const getAllFolders = async (req, res) => {
     try {
-        const folders = await Folder.find();
+        const userId = req.auth.user_id;
+        const folders = await Folder.find({ user_id: userId });
         res.json(folders);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -23,7 +24,12 @@ export const getFolderById = async (req, res) => {
 
 // Create a new folder
 export const createFolder = async (req, res) => {
-    const folder = new Folder(req.body);
+    const folder = new Folder({
+        user_id: req.auth.user_id,
+        name: req.body.name,
+        color: req.body.color,
+        icon: req.body.icon
+    });
     try {
         const newFolder = await folder.save();
         res.status(201).json(newFolder);

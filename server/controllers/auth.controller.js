@@ -4,7 +4,7 @@ import { expressjwt } from "express-jwt";
 import config from "./../../config/config.js";
 import axios from "axios";
 
-const JWTTOKEN_NAME = "t";
+const JWT_COOKIE_TOKEN_NAME = "t";
 const signin = async (req, res) => {
   try {
     let user = await User.findOne({ email: req.body.email });
@@ -15,7 +15,7 @@ const signin = async (req, res) => {
         .send({ error: "Email and password don't match." });
     }
     const token = jwt.sign({ _id: user._id }, config.jwtSecret);
-    res.cookie(JWTTOKEN_NAME, token, { expire: new Date() + 9999 });
+    res.cookie(JWT_COOKIE_TOKEN_NAME, token, { expire: new Date() + 9999 });
     return res.json({
       token,
       user: {
@@ -29,37 +29,21 @@ const signin = async (req, res) => {
   }
 };
 const signout = (req, res) => {
-  res.clearCookie(JWTTOKEN_NAME);
+  res.clearCookie(JWT_COOKIE_TOKEN_NAME);
   return res.status(200).json({
     message: "signed out",
   });
 };
-const requireSignin = expressjwt({
-  secret: config.jwtSecret,
-  algorithms: ["HS256"],
-  userProperty: "auth",
-});
 
-const hasAuthorization = (req, res, next) => {
-  const authorized = req.profile && req.auth && req.profile._id == req.auth._id;
-  if (!authorized) {
-    return res.status(403).json({
-      error: "User is not authorized",
-    });
-  }
-  next();
-};
 const googleLogin = async (req, res, next) => {
   const now = () => new Date().toISOString();
   const mask = (s) => (s ? `${s.slice(0, 6)}...${s.slice(-6)}` : s);
-  const authHeader = req.headers.authorization;
 
   console.log(`[${now()}] googleLogin invoked`, {
     method: req.method,
     url: req.originalUrl || req.url,
     ip: req.ip || req.connection?.remoteAddress,
     userAgent: req.get?.('User-Agent') || req.headers['user-agent'],
-    hasAuthHeader: !!authHeader,
   });
 
   // if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
@@ -109,10 +93,11 @@ const googleLogin = async (req, res, next) => {
       });
       // Return HTTP response for existing user
       const token = jwt.sign({ user_id: existingUser._id }, config.jwtSecret);
-      res.cookie(JWTTOKEN_NAME, token, { expire: new Date() + 9999 });
       return res.status(200).json({
+        token: token,
         message: 'User authenticated via Google (existing account).',
         user: {
+          id: existingUser._id,
           email: existingUser.email,
           name: existingUser.name,
         },
@@ -167,10 +152,11 @@ const googleLogin = async (req, res, next) => {
       connectAccount: localUser.connectAccount
     });
     const token = jwt.sign({ user_id: localUser._id }, config.jwtSecret);
-    res.cookie(JWTTOKEN_NAME, token, { expire: new Date() + 9999 });
     return res.status(200).json({
       message: 'User successfully authenticated and registered via Google.',
+      token: token,
       user: {
+        id: localUser._id,
         email: localUser.email,
         name: localUser.name,
       }
@@ -211,23 +197,21 @@ const googleLogin = async (req, res, next) => {
   }
 };
 
-const authenticateJWT = (req, res, next) => {
-  // Access the JWT token from cookies
-  const token = req.cookies[JWTTOKEN_NAME];
+const requireSignin = expressjwt({
+  secret: config.jwtSecret,
+  algorithms: ["HS256"],
+  userProperty: "auth",
+});
 
-  if (!token) {
-    return res.status(401).json({ message: 'No token provided.' });
+const hasAuthorization = (req, res, next) => {
+  const authorized = req.profile && req.auth && req.profile._id == req.auth.user_id;
+  if (!authorized) {
+    return res.status(403).json({
+      error: "User is not authorized",
+    });
   }
-
-  jwt.verify(token, config.jwtSecret, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ message: 'Invalid or expired token.' });
-    }
-
-    req.user_id = decoded.user_id; // Store the decoded user ID in req.user_id
-    next(); // Proceed to the next middleware or route handler
-  });
+  next();
 };
 
 
-export default { signin, signout, requireSignin, hasAuthorization, googleLogin, authenticateJWT };
+export default { signin, signout, requireSignin, hasAuthorization, googleLogin };

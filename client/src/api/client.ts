@@ -2,13 +2,11 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';  // Uses proxy to /api
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-    // Get JWT token from localStorage (or sessionStorage or cookies)
-    const token = localStorage.getItem('jwtToken'); // Or replace with sessionStorage.getItem('jwtToken')
-
-    // Set Authorization header if token exists
+    const stored = sessionStorage.getItem('jwt');
+    const token = stored ? JSON.parse(stored) : '';
     const headers = {
         'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        'Authorization': `Bearer ${token}`,
         ...(options.headers || {}),
     };
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Loading } from './Loading';
 import { useGoogleLogin } from '@react-oauth/google';
+import { GoogleLogin } from '@react-oauth/google';
 interface LoginProps {
   onLoginSuccess: () => void;
 }
@@ -95,7 +96,12 @@ export function Login({
               </div>
             </div>
             {/* Social Login Buttons */}
+
             <div className="space-y-3">
+              {/* <GoogleLogin
+                onSuccess={(response) => console.log("123")}
+                onError={() => console.log('Login Failed')}
+              /> */}
               <button onClick={() => handleGoogleLogin()} className="w-full flex items-center justify-center py-2.5 px-4 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors">
                 <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
                   <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">

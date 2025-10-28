@@ -18,22 +18,7 @@ import mealPlanRoute from "./routes/mealPlan.route.js";
 
 const app = express();
 
-const authenticateJWT = (req, res, next) => {
-  const token = req.cookies.jwt; // Access the JWT token from cookies
 
-  if (!token) {
-    return res.status(401).json({ message: 'No token provided.' });
-  }
-
-  jwt.verify(token, config.jwtSecret, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ message: 'Invalid or expired token.' });
-    }
-
-    req.user = decoded; // Store the decoded user data in req.user
-    next(); // Proceed to the next middleware or route handler
-  });
-};
 const CURRENT_WORKING_DIR = process.cwd();
 app.use(cors({
   origin: 'http://localhost:5173',  // Allow frontend to access from this domain

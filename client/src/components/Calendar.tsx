@@ -68,13 +68,13 @@ export function Calendar({
   const hasCookingHistory = (day: number | null) => {
     if (!day) return false;
     const dateString = formatDateString(currentYear, currentMonth, day);
-    return mealPlan.some((item: MealPlan) => item.serving_date === dateString);
+    return mealPlans.some((item: MealPlan) => item.serving_date === dateString);
   };
   // Get cooking history for selected date
   const getHistoryForSelectedDate = () => {
     if (!selectedDate) return [];
     const dateString = formatDateString(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-    return mealPlan.filter((item: MealPlan) => item.serving_date === dateString);
+    return mealPlans.filter((item: MealPlan) => item.serving_date === dateString);
   };
   // Group history by meal type
   const getHistoryByMealType = () => {
@@ -138,23 +138,14 @@ export function Calendar({
   };
 
   // Handle add recipe
-  const handleOpenAddRecipe = () => {
-    if (selectedDate) {
-      setSelectedRecipeId('');
-      setSelectedMealType('dinner');
-      setSearchQuery('');
-      setShowAddRecipeModal(true);
-      setIsDropdownOpen(false);
-    } else {
-      // If no date selected, default to today
-      const today = new Date();
-      setSelectedDate(today);
-      setSelectedRecipeId('');
-      setSelectedMealType('dinner');
-      setSearchQuery('');
-      setShowAddRecipeModal(true);
-      setIsDropdownOpen(false);
-    }
+  const handleOpenAddRecipe = (date?: Date) => {
+    const dateToUse = date || selectedDate || new Date();
+    setSelectedDate(dateToUse);
+    setSelectedRecipeId('');
+    setSelectedMealType('dinner');
+    setSearchQuery('');
+    setShowAddRecipeModal(true);
+    setIsDropdownOpen(false);
   };
   // Handle recipe deletion
   const handleDeleteRecipe = (recipe: any) => {
@@ -215,13 +206,14 @@ export function Calendar({
       meal_name = recipe.meal_name;
     }
     const calendarRecipe = {
+      id: `mealplan-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       recipe_id: selectedRecipeId,
       meal_name: meal_name,
       meal_type: selectedMealType,
       serving_date: dateString,
     };
-    // Add to cooking history
     addMealPlan(calendarRecipe);
+    setMealPlans([...mealPlans, calendarRecipe]);
 
     // Reset and close modal
     setSelectedRecipeId('');
@@ -276,7 +268,8 @@ export function Calendar({
   };
   // Format date for display
   const formatDisplayDate = (dateString: string) => {
-    const date = new Date(dateString);
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
@@ -358,7 +351,7 @@ export function Calendar({
           <ArrowLeftIcon size={24} />
         </button>
         <h1 className="text-xl font-bold">Cooking Calendar</h1>
-        <button onClick={handleOpenAddRecipe} className="p-2 rounded-full hover:bg-white/20 transition-colors" aria-label="Add Recipe">
+        <button onClick={() => handleOpenAddRecipe(new Date())} className="p-2 rounded-full hover:bg-white/20 transition-colors" aria-label="Add Recipe">
           <PlusIcon size={24} />
         </button>
       </div>
@@ -513,8 +506,9 @@ export function Calendar({
                 <div className="p-2 bg-gray-50 flex justify-center">
                   <button onClick={e => {
                     e.stopPropagation();
-                    setSelectedDate(new Date(date));
-                    handleOpenAddRecipe();
+                    const [year, month, day] = date.split('-').map(Number);
+                    setSelectedDate(new Date(year, month - 1, day));
+                    handleOpenAddRecipe(new Date(year, month - 1, day));
                   }} className="text-sm text-red-600 hover:text-red-700 flex items-center px-3 py-1 rounded-lg hover:bg-red-50">
                     <PlusIcon size={14} className="mr-1" />
                     Add meal
@@ -535,7 +529,7 @@ export function Calendar({
               year: 'numeric'
             })}
           </h3>
-          <button onClick={handleOpenAddRecipe} className="flex items-center text-sm bg-red-50 text-red-600 px-3 py-1.5 rounded-lg border border-red-100 hover:bg-red-100 transition-colors">
+          <button onClick={() => handleOpenAddRecipe(selectedDate)} className="flex items-center text-sm bg-red-50 text-red-600 px-3 py-1.5 rounded-lg border border-red-100 hover:bg-red-100 transition-colors">
             <PlusIcon size={16} className="mr-1" />
             Add Recipe
           </button>
