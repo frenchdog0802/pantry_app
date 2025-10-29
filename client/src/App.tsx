@@ -12,6 +12,7 @@ import { PantryProvider } from './contexts/pantryContext';
 import { AuthProvider, useAuth } from './contexts/authContext';
 import { AICookingAssistant } from './components/AICookingAssistant';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import config from "../../config/config.js";
 
 function AppContent() {
   const [currentView, setCurrentView] = useState('home');
@@ -72,7 +73,7 @@ function AppContent() {
 export function App() {
   return <AuthProvider>
     <PantryProvider>
-      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <GoogleOAuthProvider clientId={config.googleClientId}>
         <AppContent />
       </GoogleOAuthProvider>
     </PantryProvider>
