@@ -1,5 +1,5 @@
-import { api } from './Client';
-import type { PantryItem } from './Types';
+import { api } from './client';
+import type { PantryItem } from './types';
 
 export const PantryItemApi = {
     list: () => api.get<PantryItem[]>('/api/pantry-item'),

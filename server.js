@@ -14,12 +14,21 @@ mongoose
 mongoose.connection.on("error", () => {
   throw new Error(`unable to connect to database: ${config.mongoUri}`);
 });
-app.get("/", (req, res) => {
-  res.json({ message: "Welcome to User application." });
+const CURRENT_WORKING_DIR = process.cwd();
+app.use(express.static(path.join(CURRENT_WORKING_DIR, "dist")));  // Serves JS/CSS/images
+app.get("*", (req, res) => {
+  res.sendFile(path.join(CURRENT_WORKING_DIR, "dist", "index.html"));
 });
+
+// Optional: Keep a health check route if needed (won't conflict with catch-all if prefixed)
+app.get("/api/health", (req, res) => {
+  res.json({ message: "Welcome to User application. Server healthy." });
+});
+
 app.listen(config.port, (err) => {
   if (err) {
-    console.log(err);
+    console.error("Server startup error:", err);
+    process.exit(1);
   }
   console.info("Server started on port %s.", config.port);
 });

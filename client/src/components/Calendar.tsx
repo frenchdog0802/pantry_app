@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, ImageIcon, PlusIcon, TrashIcon, XIcon, AlertCircleIcon, SearchIcon, ChevronDownIcon, CalendarIcon, ListIcon, MoreHorizontalIcon, ChevronUpIcon } from 'lucide-react';
-import { usePantry } from '../contexts/PantryContext';
-import { MealPlan } from '../api/Types';
+import { usePantry } from '../contexts/pantryContext';
+import { MealPlan } from '../api/types';
 interface CalendarProps {
   onBack: () => void;
 }

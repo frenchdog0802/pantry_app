@@ -8,8 +8,8 @@ import { RecipeManager } from './components/RecipeManager';
 import { Login } from './components/Login';
 import { Settings } from './components/Settings';
 import { Loading } from './components/Loading';
-import { PantryProvider } from './contexts/PantryContext';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { PantryProvider } from './contexts/pantryContext';
+import { AuthProvider, useAuth } from './contexts/authContext';
 import { AICookingAssistant } from './components/AICookingAssistant';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 

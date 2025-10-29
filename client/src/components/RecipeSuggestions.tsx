@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowLeftIcon, ShoppingCartIcon } from 'lucide-react';
-import { usePantry } from '../contexts/PantryContext';
+import { usePantry } from '../contexts/pantryContext';
 import { RecipeCard } from './RecipeCard';
 interface RecipeSuggestionsProps {
   onSelectRecipe: (recipe: any) => void;

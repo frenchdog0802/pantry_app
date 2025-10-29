@@ -1,5 +1,5 @@
-import { api } from './Client';
-import type { CookingHistoryItem } from './Types';
+import { api } from './client';
+import type { CookingHistoryItem } from './types';
 
 export const historyApi = {
     list: () => api.get<CookingHistoryItem[]>('/api/history'),

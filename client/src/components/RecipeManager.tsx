@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeftIcon, PlusIcon, TrashIcon, SearchIcon, CalendarIcon, EditIcon, XIcon, ImageIcon, PackageIcon, FolderIcon, ChevronRightIcon, HomeIcon, MoreVerticalIcon, FolderPlusIcon, PencilIcon, AlertCircleIcon } from 'lucide-react';
-import { usePantry } from '../contexts/PantryContext';
-import { IngredientEntry, Folder, Recipe } from '../api/Types';
+import { usePantry } from '../contexts/pantryContext';
+import { IngredientEntry, Folder, Recipe } from '../api/types';
 
 // Using shared Recipe type from api/Types
 

@@ -1,5 +1,5 @@
-import { api } from './Client';
-import { ShoppingListItem } from './Types';
+import { api } from './client';
+import { ShoppingListItem } from './types';
 
 export const shoppingListApi = {
     // List all shopping list items, optionally filtered by query

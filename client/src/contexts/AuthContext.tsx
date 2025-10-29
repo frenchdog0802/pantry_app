@@ -1,6 +1,6 @@
 import React, { useEffect, useState, createContext, useContext } from 'react';
-import { auth } from '../api/Api-auth';
-import { authHelper } from '../api/Auth-helper.ts';
+import { auth } from '../api/api-auth.ts';
+import { authHelper } from '../api/auth-helper.ts';
 interface User {
   id: string;
   name: string;

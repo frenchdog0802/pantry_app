@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ChefHatIcon, CalendarIcon, ClipboardListIcon, PackageIcon, ShoppingCartIcon, UtensilsIcon, SettingsIcon } from 'lucide-react';
-import { usePantry } from '../contexts/PantryContext';
-import { useAuth } from '../contexts/AuthContext';
+import { usePantry } from '../contexts/pantryContext';
+import { useAuth } from '../contexts/authContext';
 interface HomeProps {
   onCookWithWhatIHave: () => void;
   onViewCalendar: () => void;

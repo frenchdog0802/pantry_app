@@ -1,6 +1,6 @@
 // src/api/Api-auth.ts
-import { api } from './Client';
-import type { User } from './Types';
+import { api } from './client';
+import type { User } from './types';
 
 export const auth = {
   signin: (user: User) => api.post<User>('/api/auth/signin', user),

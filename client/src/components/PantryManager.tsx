@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeftIcon, PlusIcon, MinusIcon, TrashIcon, SearchIcon, PackageIcon, ShoppingCartIcon, CheckIcon } from 'lucide-react';
-import { usePantry } from '../contexts/PantryContext';
-import { PantryItem } from '../api/Types';
+import { usePantry } from '../contexts/pantryContext';
+import { PantryItem } from '../api/types';
 import useSearchIngredients from '../hooks/useSearchIngredients';
 interface PantryManagerProps {
   onBack: () => void;

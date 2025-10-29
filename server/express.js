@@ -14,10 +14,7 @@ import pantryItemRoute from "./routes/pantryItem.route.js";
 import shoppingListRoute from "./routes/shoppingList.route.js";
 import mealPlanRoute from "./routes/mealPlan.route.js";
 
-
-
 const app = express();
-
 
 const CURRENT_WORKING_DIR = process.cwd();
 app.use(cors({

@@ -1,24 +1,24 @@
 import React, { useState, createContext, useContext, useEffect } from 'react';
-import { PantryItem, ShoppingListItem, Recipe, Folder, UserSettings, IngredientEntry, MealPlan } from '../api/Types';
-import { recipeApi } from '../api/Recipes';
-import { folderApi } from '../api/Folder';
-import { PantryItemApi } from '../api/PantryItem';
-import { ingredientApi } from "../api/Ingredient";
-import { shoppingListApi } from '../api/ShoppingList';
-import { mealPlanApi } from '../api/MealPlan';
+import { PantryItem, ShoppingListItem, Recipe, Folder, UserSettings, IngredientEntry, MealPlan } from '../api/types';
+import { recipeApi } from '../api/recipes';
+import { folderApi } from '../api/folder';
+import { PantryItemApi } from '../api/pantryItem';
+import { ingredientApi } from "../api/ingredient";
+import { shoppingListApi } from '../api/shoppingList';
+import { mealPlanApi } from '../api/mealPlan';
 
 interface PantryContextType {
   queryPantryData: () => void;
   recipes: Recipe[];
   fetchAllRecipes: () => void;
-  addRecipe: (Recipe: Omit<Recipe, 'id'>) => void;
+  addRecipe: (Recipe: Recipe) => void;
   updateRecipe: (Recipe: Recipe) => void;
   deleteRecipe: (id: string) => void;
   userSettings: UserSettings;
   updateUserSettings: (settings: UserSettings) => void;
   folders: Folder[];
   fetchAllFolders: () => void;
-  addFolder: (folder: Omit<Folder, 'id'>) => Promise<void>;
+  addFolder: (folder: Folder) => Promise<void>;
   deleteFolder: (id: string) => void;
   updateFolder: (folder: Folder) => void;
 
@@ -44,7 +44,7 @@ interface PantryContextType {
   // meal plans
   mealPlan: MealPlan[];
   fetchAllMealPlans: () => void;
-  addMealPlan: (mealPlan: Omit<MealPlan, 'id'>) => void;
+  addMealPlan: (mealPlan: MealPlan) => void;
   updateMealPlan: (mealPlan: MealPlan) => void;
   deleteMealPlan: (id: string) => void;
 }

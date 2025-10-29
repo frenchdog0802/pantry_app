@@ -1,5 +1,5 @@
-import { api } from './Client';
-import { Recipe } from './Types';
+import { api } from './client';
+import { Recipe } from './types';
 
 export const recipeApi = {
     // List all recipes, optionally filtered by query

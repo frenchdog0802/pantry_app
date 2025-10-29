@@ -1,5 +1,5 @@
-import { api } from './Client';
-import { MealPlan } from './Types';
+import { api } from './client';
+import { MealPlan } from './types';
 
 export const mealPlanApi = {
     // List all meal plans, optionally filtered by query
