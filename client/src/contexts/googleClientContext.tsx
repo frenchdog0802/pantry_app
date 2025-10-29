@@ -1,11 +1,12 @@
 import React, { createContext, useContext } from 'react';
+import config from "../../../config/config.js";
 
 // Create a context to store Google Client ID
 const GoogleClientContext = createContext();
 
 // Create a provider component
 export const GoogleClientProvider = ({ children }) => {
-    const googleClientId = import.meta.env.REACT_APP_GOOGLE_CLIENT_ID;  // Get it from .env file
+    const googleClientId = config.GOOGLE_CLIENT_ID;  // Get it from config
 
     return (
         <GoogleClientContext.Provider value={googleClientId}>
