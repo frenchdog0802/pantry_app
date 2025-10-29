@@ -6,7 +6,7 @@ const GoogleClientContext = createContext();
 
 // Create a provider component
 export const GoogleClientProvider = ({ children }) => {
-    const googleClientId = config.GOOGLE_CLIENT_ID;  // Get it from config
+    const googleClientId = config.googleClientId;  // Get it from config
 
     return (
         <GoogleClientContext.Provider value={googleClientId}>
