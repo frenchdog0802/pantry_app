@@ -1,6 +1,7 @@
 import config from "./config/config.js";
 import app from "./server/express.js";
 import mongoose from "mongoose";
+import express from "express";
 mongoose.Promise = global.Promise;
 mongoose
   .connect(config.mongoUri, {
@@ -15,10 +16,8 @@ mongoose.connection.on("error", () => {
   throw new Error(`unable to connect to database: ${config.mongoUri}`);
 });
 const CURRENT_WORKING_DIR = process.cwd();
-app.use(express.static(path.join(CURRENT_WORKING_DIR, "dist")));  // Serves JS/CSS/images
-app.get("*", (req, res) => {
-  res.sendFile(path.join(CURRENT_WORKING_DIR, "dist", "index.html"));
-});
+
+
 
 // Optional: Keep a health check route if needed (won't conflict with catch-all if prefixed)
 app.get("/api/health", (req, res) => {
