@@ -1,8 +1,0 @@
-PantryContext acts as your data layer. 
-PantryContext is where implement apis
-frontpage need to call PantryContext via apis
-
-
-useEffect
-
-useState
