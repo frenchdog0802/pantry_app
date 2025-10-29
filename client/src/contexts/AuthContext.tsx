@@ -7,7 +7,6 @@ interface User {
   email: string;
 }
 interface AuthContextType {
-  hasFetched: boolean;
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
