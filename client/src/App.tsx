@@ -13,6 +13,7 @@ import { AuthProvider, useAuth } from './contexts/authContext';
 import { AICookingAssistant } from './components/AICookingAssistant';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import config from "../../config/config.js";
+import { useLocation } from 'react-router-dom';
 
 function AppContent() {
   const [currentView, setCurrentView] = useState('home');
@@ -26,11 +27,19 @@ function AppContent() {
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       setCurrentView('login');
+    } else {
+      const params = new URLSearchParams(window.location.search);
+      const view = params.get('view');
+      const activeTab = params.get('tab');
+
+      if (view) {
+        setCurrentView(view);
+        if (activeTab) {
+          setViewData({ activeTabParam: activeTab });
+        }
+      }
     }
   }, [isAuthenticated, loading]);
-  const navigateToSuggestions = () => {
-    setCurrentView('suggestions');
-  };
   const navigateToRecipeDetail = (recipe: any) => {
     setSelectedRecipe(recipe);
     setCurrentView('recipeDetail');
