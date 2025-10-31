@@ -1,15 +1,17 @@
 import React, { useEffect, useState, createContext, useContext } from 'react';
 import { auth } from '../api/api-auth.ts';
 import { authHelper } from '../api/auth-helper.ts';
-interface User {
-  id: string;
-  name: string;
-  email: string;
+import { ApiResponse, User, } from '../api/types.ts';
+
+export interface AuthResponse {
+  success: boolean;
+  message?: string;
 }
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  signUp: (user: User, password: string) => Promise<AuthResponse>;
+  login: (email: string, password: string) => Promise<AuthResponse>;
   logout: () => void;
   isAuthenticated: boolean;
   googleLogin?: (token: string, onLoginSuccess: () => void) => void;
@@ -27,35 +29,57 @@ export const AuthProvider: React.FC<{
       const checkAuth = async () => {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
-          setUser(JSON.parse(storedUser));
+          setUser(JSON.parse(storedUser) as User);
         }
         setLoading(false);
       };
       checkAuth();
     }, []);
-    const login = async (email: string, password: string): Promise<boolean> => {
+
+    const signUp = async (user: User, password: string): Promise<ApiResponse> => {
       setLoading(true);
-      // Simulate API call with a delay
-      return new Promise(resolve => {
-        setTimeout(() => {
-          // Mock authentication - in a real app, this would be an API call
-          if (email && password) {
-            // For demo purposes, any non-empty email/password works
-            const user = {
-              id: '1',
-              name: email.split('@')[0],
-              email
-            };
-            setUser(user);
-            localStorage.setItem('user', JSON.stringify(user));
-            setLoading(false);
-            resolve(true);
-          } else {
-            setLoading(false);
-            resolve(false);
-          }
-        }, 1000);
-      });
+      const authResponse: ApiResponse = { success: false };
+      try {
+        const response = await auth.signup(user, password);
+
+        if (response && response.success && response.data) {
+          const createdUser = response.data?.user as User;
+          setUser(createdUser);
+          localStorage.setItem('user', JSON.stringify(createdUser));
+          authHelper.authenticate(response.data?.token);
+          authResponse.success = true;
+        } else {
+          authResponse.success = false;
+          authResponse.message = response.message || 'Sign up failed';
+        }
+      } catch (error) {
+        console.error('Error during sign up:', error);
+      } finally {
+        setLoading(false);
+      }
+      return authResponse;
+    };
+    const login = async (email: string, password: string): Promise<AuthResponse> => {
+      setLoading(true);
+      const authResponse: AuthResponse = { success: false };
+      try {
+        const response = await auth.signin(email, password);
+        if (response && response.statusCode === 200 && response.data) {
+          // const loggedInUser = ('data' in response.data ? response.data.data?.user : response.data) as User;
+          // authHelper.authenticate(response.data.data?.token);
+          // setUser(loggedInUser);
+          // localStorage.setItem('user', JSON.stringify(loggedInUser));
+          authResponse.success = true;
+        } else {
+          authResponse.success = false;
+          authResponse.message = response.message || 'Login failed';
+        }
+      } catch (error) {
+        console.error('Error logging in:', error);
+      } finally {
+        setLoading(false);
+      }
+      return authResponse;
     };
     const logout = () => {
       setUser(null);
@@ -65,13 +89,13 @@ export const AuthProvider: React.FC<{
 
     const googleLogin = (token: string, onLoginSuccess: () => void) => {
       setLoading(true);
-      auth.googleAuthLogin(token).then((data: any) => {
-        if (data.error) {
+      auth.googleAuthLogin(token).then((response: any) => {
+        if (response.error) {
           setLoading(false);
         } else {
-          setUser(data.user);
-          localStorage.setItem('user', JSON.stringify(data.user));
-          authHelper.authenticate(data.token, onLoginSuccess);
+          setUser(response.data);
+          localStorage.setItem('user', JSON.stringify(response.data));
+          // authHelper.authenticate(response.data.token, onLoginSuccess);
         }
         setLoading(false);
       });
@@ -83,6 +107,7 @@ export const AuthProvider: React.FC<{
       logout,
       isAuthenticated: !!user,
       googleLogin,
+      signUp,
     };
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
   };

@@ -5,8 +5,10 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { GoogleLogin } from '@react-oauth/google';
 interface LoginProps {
   onLoginSuccess: () => void;
+  onSignUp: () => void;
 }
 export function Login({
+  onSignUp,
   onLoginSuccess
 }: LoginProps) {
   const [email, setEmail] = useState('');
@@ -122,9 +124,9 @@ export function Login({
             </div>
             <div className="text-center text-sm text-gray-500 mt-6">
               Don't have an account?{' '}
-              <a href="#" className="text-orange-600 hover:text-orange-500">
+              <button onClick={onSignUp} className="text-orange-600 hover:text-orange-500 font-medium">
                 Sign up
-              </a>
+              </button>
             </div>
           </>}
         </div>

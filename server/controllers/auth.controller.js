@@ -3,36 +3,43 @@ import jwt from "jsonwebtoken";
 import { expressjwt } from "express-jwt";
 import config from "./../../config/config.js";
 import axios from "axios";
+import { successResponse, errorResponse } from "../utils/apiResponse.js";
+
 
 const JWT_COOKIE_TOKEN_NAME = "t";
+
+const signup = async (req, res) => {
+  const userExists = await User.findOne({ email: req.body.email });
+  if (userExists)
+    return res.json(errorResponse("Email is taken"));
+  const user = new User(req.body);
+  try {
+    await user.save();
+    const token = jwt.sign({ user_id: user._id }, config.jwtSecret);
+    res.cookie(JWT_COOKIE_TOKEN_NAME, token, { expire: new Date() + 9999 });
+    return res.json(successResponse({ token, user: { _id: user._id, name: user.name, email: user.email } }));
+  } catch (err) {
+    return res.json(errorResponse("Could not sign up"));
+  }
+};
+
 const signin = async (req, res) => {
   try {
     let user = await User.findOne({ email: req.body.email });
-    if (!user) return res.status(401).json({ error: "User not found" });
+    if (!user) return res.json(errorResponse("User not found"));
     if (!user.authenticate(req.body.password)) {
-      return res
-        .status(401)
-        .send({ error: "Email and password don't match." });
+      return res.json(errorResponse("Email and password don't match."));
     }
-    const token = jwt.sign({ _id: user._id }, config.jwtSecret);
+    const token = jwt.sign({ user_id: user._id }, config.jwtSecret);
     res.cookie(JWT_COOKIE_TOKEN_NAME, token, { expire: new Date() + 9999 });
-    return res.json({
-      token,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-      },
-    });
+    return res.json(successResponse({ token, user: { _id: user._id, name: user.name, email: user.email } }));
   } catch (err) {
-    return res.status(401).json({ error: "Could not sign in" });
+    return res.json(errorResponse("Could not sign in"));
   }
 };
 const signout = (req, res) => {
   res.clearCookie(JWT_COOKIE_TOKEN_NAME);
-  return res.status(200).json({
-    message: "signed out",
-  });
+  return res.json(successResponse({ message: "signed out" }));
 };
 
 const googleLogin = async (req, res, next) => {
@@ -93,7 +100,7 @@ const googleLogin = async (req, res, next) => {
       });
       // Return HTTP response for existing user
       const token = jwt.sign({ user_id: existingUser._id }, config.jwtSecret);
-      return res.status(200).json({
+      return res.json(successResponse({
         token: token,
         message: 'User authenticated via Google (existing account).',
         user: {
@@ -101,7 +108,7 @@ const googleLogin = async (req, res, next) => {
           email: existingUser.email,
           name: existingUser.name,
         },
-      });
+      }));
     } else {
       console.log(`[${now()}] No existing user found for googleId, proceeding with registration...`);
     }
@@ -152,7 +159,7 @@ const googleLogin = async (req, res, next) => {
       connectAccount: localUser.connectAccount
     });
     const token = jwt.sign({ user_id: localUser._id }, config.jwtSecret);
-    return res.status(200).json({
+    return res.json(successResponse({
       message: 'User successfully authenticated and registered via Google.',
       token: token,
       user: {
@@ -160,7 +167,7 @@ const googleLogin = async (req, res, next) => {
         email: localUser.email,
         name: localUser.name,
       }
-    });
+    }));
 
   } catch (error) {
     const errorMessage = error.response
@@ -190,10 +197,9 @@ const googleLogin = async (req, res, next) => {
       });
     }
 
-    return res.status(401).json({
-      message: 'Authentication failed: Invalid or expired Google Access Token.',
-      details: errorMessage
-    });
+    return res.json(errorResponse({
+      message: 'Authentication failed: Invalid or expired Google Access Token.'
+    }));
   }
 };
 
@@ -206,12 +212,12 @@ const requireSignin = expressjwt({
 const hasAuthorization = (req, res, next) => {
   const authorized = req.profile && req.auth && req.profile._id == req.auth.user_id;
   if (!authorized) {
-    return res.status(403).json({
-      error: "User is not authorized",
-    });
+    return res.json(errorResponse({
+      message: "User is not authorized",
+    }));
   }
   next();
 };
 
 
-export default { signin, signout, requireSignin, hasAuthorization, googleLogin };
+export default { signup, signin, signout, requireSignin, hasAuthorization, googleLogin };

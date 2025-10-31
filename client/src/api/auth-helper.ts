@@ -13,9 +13,8 @@ export const authHelper = {
     return jwtStr ? JSON.parse(jwtStr) : null;
   },
 
-  authenticate: (jwt: unknown, cb: () => void) => {
+  authenticate: (jwt: unknown) => {
     if (typeof window !== "undefined") sessionStorage.setItem("jwt", JSON.stringify(jwt));
-    cb();
   },
 
   clearJWT: () => {

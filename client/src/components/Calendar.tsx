@@ -64,12 +64,6 @@ export function Calendar({
   const formatDateObj = (date: Date) => {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   };
-  // Check if a day has cooking history
-  const hasCookingHistory = (day: number | null) => {
-    if (!day) return false;
-    const dateString = formatDateString(currentYear, currentMonth, day);
-    return mealPlans.some((item: MealPlan) => item.serving_date === dateString);
-  };
   // Get cooking history for selected date
   const getHistoryForSelectedDate = () => {
     if (!selectedDate) return [];
@@ -259,7 +253,7 @@ export function Calendar({
       weekData[dateString] = [];
     });
     // Add cooking history data for the week
-    mealPlan.forEach((item: any) => {
+    mealPlans.forEach((item: any) => {
       if (weekData.hasOwnProperty(item.serving_date)) {
         weekData[item.serving_date].push(item);
       }
@@ -295,25 +289,11 @@ export function Calendar({
     const weekStart = new Date(currentWeekStart);
     const weekEnd = new Date(currentWeekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
-    const formatOptions: Intl.DateTimeFormatOptions = {
-      month: 'short',
-      day: 'numeric'
-    };
-    // Add year if different
-    if (weekStart.getFullYear() !== weekEnd.getFullYear()) {
-      return `${weekStart.toLocaleDateString('en-US', {
-        ...formatOptions,
-        year: 'numeric'
-      })} - ${weekEnd.toLocaleDateString('en-US', {
-        ...formatOptions,
-        year: 'numeric'
-      })}`;
-    }
-    // If same year, only show year once at the end
-    return `${weekStart.toLocaleDateString('en-US', formatOptions)} - ${weekEnd.toLocaleDateString('en-US', {
-      ...formatOptions,
-      year: 'numeric'
-    })}`;
+
+    const formatDate = (date: Date) =>
+      `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
+
+    return `${formatDate(weekStart)} - ${formatDate(weekEnd)}`;
   };
   // Toggle date group expansion
   const toggleDateGroupExpansion = (date: string) => {
@@ -397,7 +377,6 @@ export function Calendar({
               {calendarDays.map((day, index) => {
                 const isToday = day === new Date().getDate() && currentMonth === new Date().getMonth() && currentYear === new Date().getFullYear();
                 const isSelected = selectedDate && day === selectedDate.getDate() && currentMonth === selectedDate.getMonth() && currentYear === selectedDate.getFullYear();
-                const hasHistory = hasCookingHistory(day);
 
                 // Get meal types for this day
                 const dateString = day ? formatDateString(currentYear, currentMonth, day) : '';

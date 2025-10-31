@@ -1,9 +1,24 @@
-export type User = { id: string; email: string; name: string; token?: string };
+
+
+export interface ApiResponse<T = unknown> {
+    success: boolean;
+    message?: string;
+    data?: T;
+    statusCode?: number;
+}
+export type User = {
+    id?: string;
+    first_name: string;
+    last_name: string;
+    name: string;
+    email: string;
+    token?: string;
+}
 
 export interface UserSettings {
     name: string;
     language: string;
-    measurementUnit: string;
+    measurement_unit: string;
 }
 
 export interface IngredientEntry {

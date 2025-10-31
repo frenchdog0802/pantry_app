@@ -1,52 +1,64 @@
 import mongoose from "mongoose";
-import bcrypt from "bcrypt";
+import crypto from "crypto";
 
 const UserSchema = new mongoose.Schema(
   {
     first_name: { type: String, required: true, trim: true },
     last_name: { type: String, required: true, trim: true },
     name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, trim: true },
-    password_hash: { type: String, required: true },
-    role: { type: String, default: "user" },
+    email: {
+      type: String,
+      required: true,
+      unique: "Email already exists",
+      trim: true,
+      lowercase: true,
+      match: [/.+\@.+\..+/, "Please fill a valid email address"],
+    },
+    hashed_password: { type: String, required: "Password is required" },
+    role: { type: String, enum: ["user", "admin"], default: "user" },
     ConnectAccount: { type: String },
     googleId: { type: String },
     picture: { type: String },
     createdAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
     updatedAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
-  },
-  {
-    versionKey: false,
   }
 );
-
-// Hash password before saving
-UserSchema.pre("save", async function (next) {
-  if (!this.isModified("password_hash")) return next();
-  const salt = await bcrypt.genSalt(10);
-  this.password_hash = await bcrypt.hash(this.password_hash, salt);
-  next();
-});
-
-// Password authentication method
-UserSchema.methods.authenticate = async function (password) {
-  return bcrypt.compare(password, this.password_hash);
+UserSchema.virtual("password")
+  .set(function (password) {
+    this._password = password;
+    this.salt = this.makeSalt();
+    //this.hashed_password = password;
+    this.hashed_password = this.encryptPassword(password);
+  })
+  .get(function () {
+    return this._password;
+  });
+UserSchema.path("hashed_password").validate(function (v) {
+  if (this._password && this._password.length < 6) {
+    this.invalidate("password", "Password must be at least 6 characters.");
+  }
+  if (this.isNew && !this._password) {
+    this.invalidate("password", "Password is required");
+  }
+}, null);
+UserSchema.methods = {
+  authenticate: function (plainText) {
+    return this.encryptPassword(plainText) === this.hashed_password;
+  },
+  encryptPassword: function (password) {
+    if (!password) return "";
+    try {
+      return crypto
+        .createHmac("sha1", this.salt)
+        .update(password)
+        .digest("hex");
+    } catch (err) {
+      return "";
+    }
+  },
+  makeSalt: function () {
+    return Math.round(new Date().valueOf() * Math.random()) + "";
+  },
 };
 
-// Clean JSON output
-UserSchema.set("toJSON", {
-  transform: (_, ret) => {
-    ret.id = ret._id.toString();
-    delete ret._id;
-    delete ret.password_hash; // Never expose hash
-  },
-});
-
-UserSchema.pre('save', function (next) {
-  this.updatedAt = Math.floor(Date.now() / 1000);
-  next();
-});
-
-
-const User = mongoose.model("User", UserSchema);
-export default User;
+export default mongoose.model("User", UserSchema);
