@@ -8,15 +8,15 @@ const UserSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     email: {
       type: String,
-      required: true,
+      required: "Email is required",
       unique: "Email already exists",
       trim: true,
-      lowercase: true,
       match: [/.+\@.+\..+/, "Please fill a valid email address"],
     },
     hashed_password: { type: String, required: "Password is required" },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     ConnectAccount: { type: String },
+    salt: String,
     googleId: { type: String },
     picture: { type: String },
     createdAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
@@ -43,6 +43,7 @@ UserSchema.path("hashed_password").validate(function (v) {
 }, null);
 UserSchema.methods = {
   authenticate: function (plainText) {
+    const a = this.encryptPassword(plainText);
     return this.encryptPassword(plainText) === this.hashed_password;
   },
   encryptPassword: function (password) {
@@ -53,6 +54,7 @@ UserSchema.methods = {
         .update(password)
         .digest("hex");
     } catch (err) {
+      console.log(err);
       return "";
     }
   },

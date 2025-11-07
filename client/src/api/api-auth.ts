@@ -14,9 +14,7 @@ export interface SigninResponse {
 export const auth = {
   signup: (user: User, password: string) => api.post<SignupResponse>('/api/auth/signup', { ...user, password }),
   signin: (email: string, password: string) => api.post<SigninResponse>('/api/auth/signin', { email, password }),
-
   signout: () => api.get<ApiResponse>('/api/auth/signout'),
-
   googleAuthLogin: (token: string) =>
     api.post<ApiResponse<User>>('/api/auth/google-login', { token }),
 };

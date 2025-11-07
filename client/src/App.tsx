@@ -76,7 +76,7 @@ function AppContent() {
     return <Loading fullScreen />;
   }
   return <div className="w-full min-h-screen bg-gray-50">
-    {currentView === 'login' && <Login onLoginSuccess={() => setCurrentView('home')} onSignUp={navigateToSignUp} />}
+    {currentView === 'login' && <Login onLoginSuccess={navigateToHome} onSignUp={navigateToSignUp} />}
     {currentView === 'home' && isAuthenticated && <Home onCookWithWhatIHave={navigateToAiAssistant} onViewCalendar={navigateToCalendar} onManagePantry={navigateToPantryManager} onRecipeManager={navigateToRecipeManager} onSettings={navigateToSettings} />}
     {/* {currentView === 'suggestions' && isAuthenticated && <RecipeSuggestions onSelectRecipe={navigateToRecipeDetail} onBack={navigateToHome} />}
       {currentView === 'recipeDetail' && isAuthenticated && <RecipeDetail recipe={selectedRecipe} onBack={() => setCurrentView('suggestions')} />} */}
@@ -85,7 +85,7 @@ function AppContent() {
     {currentView === 'pantryManager' && isAuthenticated && <PantryManager onBack={navigateToHome} onManagePantry={(activeTabParam) => navigateToPantryManager(activeTabParam)} activeTabParam={viewData?.activeTabParam} />}
     {currentView === 'recipeManager' && isAuthenticated && <RecipeManager onBack={navigateToHome} />}
     {currentView === 'settings' && isAuthenticated && <Settings onBack={navigateToHome} />}
-    {currentView === 'signup' && <SignUp onSignUpSuccess={() => setCurrentView('home')} onLogin={navigateToLogin} />}
+    {currentView === 'signup' && <SignUp onSignUpSuccess={navigateToHome} onLogin={navigateToLogin} />}
   </div>;
 }
 export function App() {

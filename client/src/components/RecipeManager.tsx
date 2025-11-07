@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ArrowLeftIcon, PlusIcon, TrashIcon, SearchIcon, CalendarIcon, EditIcon, XIcon, ImageIcon, PackageIcon, FolderIcon, ChevronRightIcon, HomeIcon, MoreVerticalIcon, FolderPlusIcon, PencilIcon, AlertCircleIcon } from 'lucide-react';
 import { usePantry } from '../contexts/pantryContext';
 import { IngredientEntry, Folder, Recipe } from '../api/types';
+import { set } from 'mongoose';
 
 // Using shared Recipe type from api/Types
 
@@ -93,8 +94,12 @@ export function RecipeManager({
       icon: 'FolderIcon',
       createdAt: Date.now()
     }];
+
+    defaultFolders.forEach(folder => {
+      addFolder(folder);
+    });
     setFolders(defaultFolders);
-    defaultFolders.forEach(folder => addFolder(folder));
+
     // localStorage.setItem('recipeFolders', JSON.stringify(defaultFolders));
   };
 
@@ -730,17 +735,6 @@ export function RecipeManager({
               No items found
             </p>}
           </div>
-
-          {/* Custom Ingredient */}
-          {!currentIngredient.name && <div className="mb-4">
-            <div className="text-sm text-gray-500 mb-2">
-              Or add custom ingredient:
-            </div>
-            <input type="text" placeholder="Ingredient name" value={currentIngredient.name} onChange={e => setCurrentIngredient({
-              ...currentIngredient,
-              name: e.target.value
-            })} className="w-full p-2 mb-2 border border-gray-200 rounded-lg" />
-          </div>}
 
           {/* Quantity Input */}
           {currentIngredient.name && <div className="mb-4">

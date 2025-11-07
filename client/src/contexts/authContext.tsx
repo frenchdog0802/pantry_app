@@ -64,11 +64,11 @@ export const AuthProvider: React.FC<{
       const authResponse: AuthResponse = { success: false };
       try {
         const response = await auth.signin(email, password);
-        if (response && response.statusCode === 200 && response.data) {
-          // const loggedInUser = ('data' in response.data ? response.data.data?.user : response.data) as User;
-          // authHelper.authenticate(response.data.data?.token);
-          // setUser(loggedInUser);
-          // localStorage.setItem('user', JSON.stringify(loggedInUser));
+        if (response && response.data && response.success) {
+          const loggedInUser = ('data' in response.data ? response.data?.user : response.data) as User;
+          authHelper.authenticate(response.data?.token);
+          setUser(loggedInUser);
+          localStorage.setItem('user', JSON.stringify(loggedInUser));
           authResponse.success = true;
         } else {
           authResponse.success = false;

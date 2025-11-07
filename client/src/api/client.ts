@@ -25,12 +25,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<ApiR
         headers,
         ...options,
     });
-    console.log(res)
-    console.log('API Response Status:', res.status, 'for', options.method ?? 'GET', path);
     let responseBody: ApiResponse<T>;
     try {
         responseBody = (await res.json()) as ApiResponse<T>;
-        console.log('API Response Body:', responseBody);
     } catch {
         // Fallback for non-JSON responses
         const text = await res.text().catch(() => '');

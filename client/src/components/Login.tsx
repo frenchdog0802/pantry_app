@@ -24,6 +24,7 @@ export function Login({
     setError('');
     try {
       const success = await login(email, password);
+      console.log(success);
       if (success) {
         onLoginSuccess();
       } else {

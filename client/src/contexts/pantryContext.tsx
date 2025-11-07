@@ -21,6 +21,7 @@ interface PantryContextType {
   addFolder: (folder: Folder) => Promise<void>;
   deleteFolder: (id: string) => void;
   updateFolder: (folder: Folder) => void;
+  // createInitFolders: (folders: Folder[]) => void;
 
   // pantry items
   pantryItems: PantryItem[];
@@ -68,17 +69,21 @@ export function PantryProvider({
   const [userSettings, setUserSettings] = useState<UserSettings>({
     name: '',
     language: 'english',
-    measurementUnit: 'metric'
+    measurement_unit: 'metric'
   });
 
   const fetchAllFolders = async () => {
     try {
-      const fetchedFolders = await folderApi.list();
-      setFolders(fetchedFolders);
+      const fetchedFoldersResponse = await folderApi.list();
+      if (fetchedFoldersResponse && fetchedFoldersResponse.data && fetchedFoldersResponse.success) {
+        const fetchedFolders = fetchedFoldersResponse.data;
+        setFolders(fetchedFolders);
+      }
     } catch (err) {
       console.error('Fetch folders failed:', err);
     }
   };
+
 
   const addFolder = async (folder: Folder) => {
     const tempFolder: Folder = {
@@ -88,12 +93,16 @@ export function PantryProvider({
     setFolders(prev => [...prev, tempFolder]);
 
     try {
-      const savedFolder = await folderApi.create(folder);
-
-      // replace temp with the one from backend
-      setFolders(prev =>
-        prev.map(f => (f.id === tempFolder.id ? savedFolder : f))
-      );
+      const savedFolderResponse = await folderApi.create(folder);
+      if (savedFolderResponse && savedFolderResponse.data && savedFolderResponse.success) {
+        // replace temp with the one from backend
+        const savedFolder = savedFolderResponse.data;
+        if (savedFolder) {
+          setFolders(prev =>
+            prev.map(f => (f.name === tempFolder.name ? savedFolder : f))
+          );
+        }
+      }
     } catch (err) {
       console.error('Insert folder failed:', err);
       // rollback if needed
@@ -113,8 +122,11 @@ export function PantryProvider({
 
   const fetchAllRecipes = async () => {
     try {
-      const fetchedRecipes = await recipeApi.list();
-      setRecipes(fetchedRecipes);
+      const fetchedRecipesResponse = await recipeApi.list();
+      if (fetchedRecipesResponse && fetchedRecipesResponse.data && fetchedRecipesResponse.success) {
+        const fetchedRecipes = fetchedRecipesResponse.data;
+        setRecipes(fetchedRecipes);
+      }
     } catch (err) {
       console.error('Fetch recipes failed:', err);
     }
@@ -128,12 +140,15 @@ export function PantryProvider({
     setRecipes(prev => [...prev, tempRecipe]);
 
     try {
-      const savedRecipe = await recipeApi.create(recipe);
+      const savedRecipeResponse = await recipeApi.create(recipe);
+      if (savedRecipeResponse && savedRecipeResponse.data && savedRecipeResponse.success) {
+        const savedRecipe = savedRecipeResponse.data;
 
-      // replace temp with the one from backend
-      setRecipes(prev =>
-        prev.map(r => (r.id === tempRecipe.id ? savedRecipe : r))
-      );
+        // replace temp with the one from backend
+        setRecipes(prev =>
+          prev.map(r => (r.id === tempRecipe.id ? savedRecipe : r))
+        );
+      }
     } catch (err) {
       console.error('Insert recipe failed:', err);
       // rollback if needed
@@ -153,8 +168,11 @@ export function PantryProvider({
 
   const fetchAllPantryItems = async () => {
     try {
-      const fetchedPantryItems = await PantryItemApi.list();
-      setPantryItems(fetchedPantryItems);
+      const fetchedPantryItemsResponse = await PantryItemApi.list();
+      if (fetchedPantryItemsResponse && fetchedPantryItemsResponse.data && fetchedPantryItemsResponse.success) {
+        const fetchedPantryItems = fetchedPantryItemsResponse.data;
+        setPantryItems(fetchedPantryItems);
+      }
     } catch (err) {
       console.error('Fetch pantry items failed:', err);
     }
@@ -169,12 +187,15 @@ export function PantryProvider({
     setPantryItems(prev => [...prev, tempItem]);
 
     try {
-      const savedItem = await PantryItemApi.create(item);
+      const savedItemResponse = await PantryItemApi.create(item);
+      if (savedItemResponse && savedItemResponse.data && savedItemResponse.success) {
+        const savedItem = savedItemResponse.data;
 
-      // replace temp with the one from backend
-      setPantryItems(prev =>
-        prev.map(i => (i.id === tempItem.id ? savedItem : i))
-      );
+        // replace temp with the one from backend
+        setPantryItems(prev =>
+          prev.map(i => (i.id === tempItem.id ? savedItem : i))
+        );
+      }
     } catch (err) {
       console.error('Insert pantry item failed:', err);
       // rollback if needed
@@ -198,8 +219,11 @@ export function PantryProvider({
   // fetch ingredients with optional query
   const fetchAllIngredients = async (query: string | null) => {
     try {
-      const fetchedIngredients = await ingredientApi.list(query || undefined);
-      setIngredients(fetchedIngredients);
+      const fetchedIngredientsResponse = await ingredientApi.list(query || undefined);
+      if (fetchedIngredientsResponse && fetchedIngredientsResponse.data && fetchedIngredientsResponse.success) {
+        const fetchedIngredients = fetchedIngredientsResponse.data;
+        setIngredients(fetchedIngredients);
+      }
     } catch (err) {
       console.error('Fetch ingredients failed:', err);
     }
@@ -208,8 +232,11 @@ export function PantryProvider({
   // shopping list item functions
   const fetchAllShoppingListItems = async () => {
     try {
-      const fetchedItems = await shoppingListApi.list();
-      setShoppingList(fetchedItems);
+      const fetchedItemsResponse = await shoppingListApi.list();
+      if (fetchedItemsResponse && fetchedItemsResponse.data && fetchedItemsResponse.success) {
+        const fetchedItems = fetchedItemsResponse.data;
+        setShoppingList(fetchedItems);
+      }
     } catch (err) {
       console.error('Fetch shopping list items failed:', err);
     }
@@ -230,12 +257,18 @@ export function PantryProvider({
     setShoppingList(prev => [...prev, tempItem]);
 
     try {
-      const savedItem = await shoppingListApi.create(item);
+      const savedItemResponse = await shoppingListApi.create(item);
+      if (savedItemResponse && savedItemResponse.data && savedItemResponse.success) {
+        const savedItem = savedItemResponse.data;
 
-      // replace temp with the one from backend
-      setShoppingList(prev =>
-        prev.map(i => (i.id === tempItem.id ? savedItem : i))
-      );
+        // replace temp with the one from backend
+        setShoppingList(prev =>
+          prev.map(i => (i.id === tempItem.id ? savedItem : i))
+        );
+      } else {
+        // rollback if response is invalid
+        setShoppingList(prev => prev.filter(i => i.id !== tempItem.id));
+      }
     } catch (err) {
       console.error('Insert shopping list item failed:', err);
       // rollback if needed
@@ -251,8 +284,11 @@ export function PantryProvider({
   // meal plan functions
   const fetchAllMealPlans = async () => {
     try {
-      const fetchedMealPlans = await mealPlanApi.list();
-      setMealPlan(fetchedMealPlans);
+      const fetchedMealPlansResponse = await mealPlanApi.list();
+      if (fetchedMealPlansResponse && fetchedMealPlansResponse.data && fetchedMealPlansResponse.success) {
+        const fetchedMealPlans = fetchedMealPlansResponse.data;
+        setMealPlan(fetchedMealPlans);
+      }
     } catch (err) {
       console.error('Fetch meal plans failed:', err);
     }
@@ -266,12 +302,18 @@ export function PantryProvider({
     setMealPlan(prev => [...prev, tempMealPlan]);
 
     try {
-      const savedMealPlan = await mealPlanApi.create(mealPlan);
+      const savedMealPlanResponse = await mealPlanApi.create(mealPlan);
+      if (savedMealPlanResponse && savedMealPlanResponse.data && savedMealPlanResponse.success) {
+        const savedMealPlan = savedMealPlanResponse.data;
 
-      // replace temp with the one from backend
-      setMealPlan(prev =>
-        prev.map(m => (m.id === tempMealPlan.id ? savedMealPlan : m))
-      );
+        // replace temp with the one from backend
+        setMealPlan(prev =>
+          prev.map(m => (m.id === tempMealPlan.id ? savedMealPlan : m))
+        );
+      } else {
+        // rollback if response is invalid
+        setMealPlan(prev => prev.filter(m => m.id !== tempMealPlan.id));
+      }
     } catch (err) {
       console.error('Insert meal plan failed:', err);
       // rollback if needed

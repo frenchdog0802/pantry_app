@@ -13,6 +13,8 @@ const signup = async (req, res) => {
   if (userExists)
     return res.json(errorResponse("Email is taken"));
   const user = new User(req.body);
+  user.role = "user";
+
   try {
     await user.save();
     const token = jwt.sign({ user_id: user._id }, config.jwtSecret);
@@ -24,16 +26,38 @@ const signup = async (req, res) => {
 };
 
 const signin = async (req, res) => {
+  const now = () => new Date().toISOString();
   try {
+    console.log(`[${now()}] signin invoked`, {
+      body: { email: req.body?.email ? req.body.email : undefined },
+      ip: req.ip || req.connection?.remoteAddress,
+      userAgent: req.get?.('User-Agent') || req.headers['user-agent'],
+    });
+
     let user = await User.findOne({ email: req.body.email });
+    console.log(`[${now()}] user lookup for email=${req.body.email} -> ${user ? `found id=${user._id}` : 'not found'}`);
+
     if (!user) return res.json(errorResponse("User not found"));
-    if (!user.authenticate(req.body.password)) {
+
+    console.log('password', req.body.password);
+    const authOk = user.authenticate(req.body.password);
+    console.log(`[${now()}] password authentication for user=${user._id} -> ${authOk}`);
+
+    if (!authOk) {
       return res.json(errorResponse("Email and password don't match."));
     }
+
     const token = jwt.sign({ user_id: user._id }, config.jwtSecret);
+    console.log(`[${now()}] JWT created for user=${user._id}`);
+
     res.cookie(JWT_COOKIE_TOKEN_NAME, token, { expire: new Date() + 9999 });
-    return res.json(successResponse({ token, user: { _id: user._id, name: user.name, email: user.email } }));
+
+    const payload = { token, user: { _id: user._id, name: user.name, email: user.email } };
+    console.log(`[${now()}] signin success for user=${user._id}`);
+
+    return res.json(successResponse(payload));
   } catch (err) {
+    console.error(`[${now()}] signin error:`, err);
     return res.json(errorResponse("Could not sign in"));
   }
 };
