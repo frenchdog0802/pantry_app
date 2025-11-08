@@ -471,7 +471,7 @@ export function PantryManager({
               </p>}
             </div> : <ul className="divide-y divide-gray-100">
               {filteredItems.map(item => {
-                return <li key={item.name} className={`p-4`}>
+                return <li key={item.id} className={`p-4`}>
                   <div className="flex justify-between items-center">
                     <div>
                       <h3 className="font-medium text-gray-800 capitalize">

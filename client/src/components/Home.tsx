@@ -2,19 +2,22 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ChefHatIcon, CalendarIcon, ClipboardListIcon, PackageIcon, ShoppingCartIcon, UtensilsIcon, SettingsIcon } from 'lucide-react';
 import { usePantry } from '../contexts/pantryContext';
 import { useAuth } from '../contexts/authContext';
+import { on } from 'events';
 interface HomeProps {
   onCookWithWhatIHave: () => void;
   onViewCalendar: () => void;
   onManagePantry: (activeTabParam: string) => void;
   onRecipeManager: () => void;
   onSettings: () => void;
+  onLogin: () => void;
 }
 export function Home({
   onCookWithWhatIHave,
   onViewCalendar,
   onManagePantry,
   onRecipeManager,
-  onSettings
+  onSettings,
+  onLogin,
 }: HomeProps) {
   const {
     shoppingList,
@@ -22,25 +25,28 @@ export function Home({
     queryPantryData,
   } = usePantry();
   const {
-    user,
+    user: user,
+    loading
   } = useAuth();
-
-  const lastFetchedUserId = useRef<string | null>(null);
 
   useEffect(() => {
     if (!user) {
-      lastFetchedUserId.current = null; // Reset on logout
-      return;
+      onLogin();
     }
-
-    // Fetch only if user changed (different user) or first time
-    if (lastFetchedUserId.current !== user.id) { // Assuming user has an 'id' property; adjust if it's user.uid or similar
-      queryPantryData();
-      lastFetchedUserId.current = user.id;
-    }
-  }, [user]); // Depend on user to react to login/logout
+    queryPantryData();
+  }, [user]);
   // Count items that need to be bought (in shopping list)
   const itemsToBuy = shoppingList.filter(item => !item.checked).length;
+
+  if (loading) {
+    return (
+      <div className="flex flex-col w-full min-h-screen bg-white items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-red-600"></div>
+        <p className="mt-4 text-gray-600">Loading...</p>
+      </div>
+    );
+  }
+
   return <div className="flex flex-col w-full min-h-screen bg-white">
     {/* Header */}
     <header className="bg-gradient-to-r from-orange-500 to-red-600 text-white p-5 shadow-md">

@@ -1,5 +1,6 @@
 import ShoppingListItem from "../models/shoppingList.model.js";
 import Ingredient from "../models/ingredient.model.js";
+import { successResponse, errorResponse } from "../utils/apiResponse.js";
 
 // Insert all shopping list items
 export const insertAllShoppingListItems = async (req, res) => {
@@ -40,10 +41,10 @@ export const insertAllShoppingListItems = async (req, res) => {
             insertedItems.push(shoppingListItem);
         }
 
-        res.status(201).json(insertedItems);
+        res.json(successResponse(insertedItems));
     } catch (err) {
         console.error("insertAllShoppingListItems error:", err);
-        res.status(400).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -87,10 +88,9 @@ export const createShoppingListItem = async (req, res) => {
             checked: shoppingListItem.checked,
             name: ingredientObj.name,
         };
-        res.status(200).json(returnObject);
+        res.json(successResponse(returnObject));
     } catch (err) {
-        console.error("createShoppingListItem error:", err);
-        res.status(400).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -113,9 +113,9 @@ export const getAllShoppingListItems = async (req, res) => {
                 unit: ingredient ? item.unit : ingredient.default_unit
             };
         }));
-        res.json(itemsWithNames);
+        res.json(successResponse(itemsWithNames));
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -123,10 +123,10 @@ export const getAllShoppingListItems = async (req, res) => {
 export const getShoppingListItemById = async (req, res) => {
     try {
         const shoppingListItem = await ShoppingListItem.findById(req.params.id);
-        if (!shoppingListItem) return res.status(404).json({ message: 'Shopping list item not found' });
-        res.json(shoppingListItem);
+        if (!shoppingListItem) return res.json({ message: 'Shopping list item not found' });
+        res.json(successResponse(shoppingListItem));
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -138,10 +138,10 @@ export const updateShoppingListItem = async (req, res) => {
             req.body,
             { new: true }
         );
-        if (!updatedShoppingListItem) return res.status(404).json({ message: 'Shopping list item not found' });
-        res.json(updatedShoppingListItem);
+        if (!updatedShoppingListItem) return res.json({ message: 'Shopping list item not found' });
+        res.json(successResponse(updatedShoppingListItem));
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -149,10 +149,10 @@ export const updateShoppingListItem = async (req, res) => {
 export const deleteShoppingListItem = async (req, res) => {
     try {
         const deletedShoppingListItem = await ShoppingListItem.findByIdAndDelete(req.params.id);
-        if (!deletedShoppingListItem) return res.status(404).json({ message: 'Shopping list item not found' });
-        res.json({ message: 'Shopping list item deleted' });
+        if (!deletedShoppingListItem) return res.json(errorResponse({ message: 'Shopping list item not found' }));
+        res.json(successResponse({ message: 'Shopping list item deleted' }));
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 

@@ -96,6 +96,7 @@ export function PantryProvider({
       const savedFolderResponse = await folderApi.create(folder);
       if (savedFolderResponse && savedFolderResponse.data && savedFolderResponse.success) {
         // replace temp with the one from backend
+        console.log('Saved folder response:', savedFolderResponse);
         const savedFolder = savedFolderResponse.data;
         if (savedFolder) {
           setFolders(prev =>
@@ -124,6 +125,7 @@ export function PantryProvider({
     try {
       const fetchedRecipesResponse = await recipeApi.list();
       if (fetchedRecipesResponse && fetchedRecipesResponse.data && fetchedRecipesResponse.success) {
+        console.log('Fetched recipes response:', fetchedRecipesResponse);
         const fetchedRecipes = fetchedRecipesResponse.data;
         setRecipes(fetchedRecipes);
       }

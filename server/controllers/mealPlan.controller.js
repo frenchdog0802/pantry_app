@@ -1,5 +1,7 @@
+import e from "express";
 import MealPlan from "../models/mealPlan.model.js";
 import Recipe from "../models/recipe.model.js";
+import { successResponse, errorResponse } from "../utils/apiResponse.js";
 // Get all meal plans
 export const getAllMealPlans = async (req, res) => {
     try {
@@ -22,9 +24,9 @@ export const getAllMealPlans = async (req, res) => {
                 returnedMealPlans.push(mealPlanObj);
             }
         }
-        res.json(returnedMealPlans);
+        res.json(successResponse(returnedMealPlans));
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -32,10 +34,10 @@ export const getAllMealPlans = async (req, res) => {
 export const getMealPlanById = async (req, res) => {
     try {
         const mealPlan = await MealPlan.findById(req.params.id);
-        if (!mealPlan) return res.status(404).json({ message: 'Meal plan not found' });
-        res.json(mealPlan);
+        if (!mealPlan) return res.json(errorResponse({ message: 'Meal plan not found' }));
+        res.json(successResponse(mealPlan));
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -49,9 +51,9 @@ export const createMealPlan = async (req, res) => {
             meal_type: request.meal_type,
             serving_date: request.serving_date,
         })
-        res.status(200).json(newMealPlan);
+        res.json(successResponse(newMealPlan));
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -63,10 +65,10 @@ export const updateMealPlan = async (req, res) => {
             req.body,
             { new: true }
         );
-        if (!updatedMealPlan) return res.status(404).json({ message: 'Meal plan not found' });
-        res.json(updatedMealPlan);
+        if (!updatedMealPlan) return res.json(errorResponse({ message: 'Meal plan not found' }));
+        res.json(successResponse(updatedMealPlan));
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -74,10 +76,10 @@ export const updateMealPlan = async (req, res) => {
 export const deleteMealPlan = async (req, res) => {
     try {
         const deletedMealPlan = await MealPlan.findByIdAndDelete(req.params.id);
-        if (!deletedMealPlan) return res.status(404).json({ message: 'Meal plan not found' });
-        res.json({ message: 'Meal plan deleted' });
+        if (!deletedMealPlan) return res.json(errorResponse({ message: 'Meal plan not found' }));
+        res.json(successResponse({ message: 'Meal plan deleted' }));
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 

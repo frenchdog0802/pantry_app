@@ -1,12 +1,13 @@
 import Ingredient from "../models/ingredient.model.js";
+import { successResponse, errorResponse } from "../utils/apiResponse.js";
 
 // Insert all
 export const insertAllIngredients = async (req, res) => {
     try {
         const ingredients = await Ingredient.insertMany(req.body);
-        res.status(201).json(ingredients);
+        res.json(successResponse(ingredients));
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -18,9 +19,9 @@ export const getAllIngredients = async (req, res) => {
         const ingredients = await Ingredient.find(
             query ? { name: { $regex: query, $options: 'i' } } : {}
         ).limit(10);
-        res.json(ingredients);
+        res.json(successResponse(ingredients));
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -28,10 +29,10 @@ export const getAllIngredients = async (req, res) => {
 export const getIngredientById = async (req, res) => {
     try {
         const ingredient = await Ingredient.findById(req.params.id);
-        if (!ingredient) return res.status(404).json({ message: 'Ingredient not found' });
-        res.json(ingredient);
+        if (!ingredient) return res.json(errorResponse({ message: 'Ingredient not found' }));
+        res.json(successResponse(ingredient));
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -40,9 +41,9 @@ export const createIngredient = async (req, res) => {
     const ingredient = new Ingredient(req.body);
     try {
         const newIngredient = await ingredient.save();
-        res.status(201).json(newIngredient);
+        res.json(successResponse(newIngredient));
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -54,10 +55,10 @@ export const updateIngredient = async (req, res) => {
             req.body,
             { new: true }
         );
-        if (!updatedIngredient) return res.status(404).json({ message: 'Ingredient not found' });
-        res.json(updatedIngredient);
+        if (!updatedIngredient) return res.json(errorResponse({ message: 'Ingredient not found' }));
+        res.json(successResponse(updatedIngredient));
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -65,10 +66,10 @@ export const updateIngredient = async (req, res) => {
 export const deleteIngredient = async (req, res) => {
     try {
         const deletedIngredient = await Ingredient.findByIdAndDelete(req.params.id);
-        if (!deletedIngredient) return res.status(404).json({ message: 'Ingredient not found' });
-        res.json({ message: 'Ingredient deleted' });
+        if (!deletedIngredient) return res.json(errorResponse({ message: 'Ingredient not found' }));
+        res.json(successResponse({ message: 'Ingredient deleted' }));
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 

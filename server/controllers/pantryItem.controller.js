@@ -1,5 +1,7 @@
 import PantryItem from "../models/pantryItem.model.js";
 import Ingredient from "../models/ingredient.model.js";
+import { successResponse, errorResponse } from "../utils/apiResponse.js";
+import e from "express";
 // Insert all
 
 export const insertAllPantryItems = async (req, res) => {
@@ -40,10 +42,9 @@ export const insertAllPantryItems = async (req, res) => {
             insertedItems.push(pantryItem);
         }
 
-        res.status(201).json(insertedItems);
+        res.json(successResponse(insertedItems));
     } catch (err) {
-        console.error("insertAllPantryItems error:", err);
-        res.status(400).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -89,10 +90,10 @@ export const createPantryItem = async (req, res) => {
             name: ingredientObj.name,
         };
 
-        res.status(200).json(returnObject);
+        res.json(successResponse(returnObject));
     } catch (err) {
         console.error("insertAllPantryItems error:", err);
-        res.status(400).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -113,9 +114,9 @@ export const getAllPantryItems = async (req, res) => {
                 unit: ingredient ? item.unit : ingredient.default_unit
             };
         }));
-        res.json(itemsWithNames);
+        res.json(successResponse(itemsWithNames));
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -123,10 +124,10 @@ export const getAllPantryItems = async (req, res) => {
 export const getPantryItemById = async (req, res) => {
     try {
         const pantryItem = await PantryItem.findById(req.params.id);
-        if (!pantryItem) return res.status(404).json({ message: 'Pantry item not found' });
-        res.json(pantryItem);
+        if (!pantryItem) return res.json({ message: 'Pantry item not found' });
+        res.json(successResponse(pantryItem));
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -140,10 +141,10 @@ export const updatePantryItem = async (req, res) => {
             req.body,
             { new: true }
         );
-        if (!updatedPantryItem) return res.status(404).json({ message: 'Pantry item not found' });
-        res.json(updatedPantryItem);
+        if (!updatedPantryItem) return res.json(errorResponse({ message: 'Pantry item not found' }));
+        res.json(successResponse(updatedPantryItem));
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -151,10 +152,10 @@ export const updatePantryItem = async (req, res) => {
 export const deletePantryItem = async (req, res) => {
     try {
         const deletedPantryItem = await PantryItem.findByIdAndDelete(req.params.id);
-        if (!deletedPantryItem) return res.status(404).json({ message: 'Pantry item not found' });
-        res.json({ message: 'Pantry item deleted' });
+        if (!deletedPantryItem) return res.json(errorResponse({ message: 'Pantry item not found' }));
+        res.json(successResponse({ message: 'Pantry item deleted' }));
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -163,14 +164,14 @@ export const updateAllPantryItems = async (req, res) => {
     try {
         const items = req.body;
         if (!Array.isArray(items)) {
-            return res.status(400).json({ message: 'Request body must be an array of items' });
+            return res.json({ message: 'Request body must be an array of items' });
         }
 
         const updatedResults = [];
 
         for (const item of items) {
             if (!item.id) {
-                return res.status(400).json({ message: 'Each item must include an id' });
+                return res.json({ message: 'Each item must include an id' });
             }
 
             const updateFields = {};
@@ -185,7 +186,7 @@ export const updateAllPantryItems = async (req, res) => {
             );
 
             if (!updated) {
-                return res.status(404).json({ message: `Pantry item not found: ${item.id}` });
+                return res.json({ message: `Pantry item not found: ${item.id}` });
             }
 
             const ingredient = await Ingredient.findById(updated.ingredient_id);
@@ -198,10 +199,9 @@ export const updateAllPantryItems = async (req, res) => {
             });
         }
 
-        res.json(updatedResults);
+        res.json(successResponse(updatedResults));
     } catch (err) {
-        console.error('updateAllPantryItems error:', err);
-        res.status(400).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { ArrowLeftIcon, PlusIcon, TrashIcon, SearchIcon, CalendarIcon, EditIcon, XIcon, ImageIcon, PackageIcon, FolderIcon, ChevronRightIcon, HomeIcon, MoreVerticalIcon, FolderPlusIcon, PencilIcon, AlertCircleIcon } from 'lucide-react';
 import { usePantry } from '../contexts/pantryContext';
 import { IngredientEntry, Folder, Recipe } from '../api/types';
-import { set } from 'mongoose';
 
 // Using shared Recipe type from api/Types
 
@@ -166,7 +165,7 @@ export function RecipeManager({
 
   const handleSelectPantryItem = (item: any) => {
     setCurrentIngredient({
-      id: item.ingredient_id,
+      id: item.id,  // Fixed: use item.id instead of item.ingredient_id (assuming PantryItem has id)
       name: item.name,
       quantity: 1,
       unit: item.unit
@@ -458,7 +457,10 @@ export function RecipeManager({
                     <div className="flex items-center mb-1">
                       {recipe.image && <ImageIcon size={16} className="ml-2 text-gray-400" />}
                     </div>
-                    <p className="text-gray-500 text-sm">&nbsp;</p>
+                    {/* Fixed: Added missing meal_name display */}
+                    <h3 className="font-medium text-gray-800 mb-1">
+                      {recipe.meal_name}
+                    </h3>
                     <p className="text-gray-500 text-xs mt-1">
                       {recipe.ingredients.length} ingredient
                       {recipe.ingredients.length !== 1 ? 's' : ''}
@@ -584,7 +586,7 @@ export function RecipeManager({
                     <h3 className="font-bold text-xl text-gray-800">
                       {selectedRecipe.meal_name}
                     </h3>
-                    <p className="text-gray-500 mt-1">&nbsp;</p>
+                    {/* Fixed: Removed empty <p>&nbsp;</p> */}
                   </div>
                 </div>
                 {selectedRecipe.image && <div className="rounded-xl overflow-hidden h-40 my-4">
@@ -725,7 +727,8 @@ export function RecipeManager({
           {/* Pantry Items List */}
           <div className="max-h-60 overflow-y-auto mb-4">
             {filteredPantryItems.length > 0 ? <ul className="divide-y divide-gray-100">
-              {filteredPantryItems.map(item => <li key={item.name} onClick={() => handleSelectPantryItem(item)} className={`p-3 cursor-pointer hover:bg-gray-50 rounded ${currentIngredient.name === item.name ? 'bg-red-50' : ''}`}>
+              {/* Fixed: Changed key from item.name to item.id to avoid duplicates */}
+              {filteredPantryItems.map(item => <li key={item.id} onClick={() => handleSelectPantryItem(item)} className={`p-3 cursor-pointer hover:bg-gray-50 rounded ${currentIngredient.name === item.name ? 'bg-red-50' : ''}`}>
                 <p className="font-medium">{item.name}</p>
                 <p className="text-sm text-gray-500">
                   Available: {item.quantity} {item.unit}

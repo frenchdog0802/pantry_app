@@ -26,19 +26,39 @@ function AppContent() {
   } = useAuth();
   // Reset to login view if not authenticated
   useEffect(() => {
+    // const location = useLocation();
     if (!loading && !isAuthenticated) {
       setCurrentView('login');
     } else {
-      const params = new URLSearchParams(window.location.search);
-      const view = params.get('view');
-      const activeTab = params.get('tab');
+      // console.log("Location pathname:", location.pathname);
+      // const path = location.pathname;
+      // let view = 'home'; // default
+      // let activeTabParam = '';
 
-      if (view) {
-        setCurrentView(view);
-        if (activeTab) {
-          setViewData({ activeTabParam: activeTab });
-        }
-      }
+      // if (path === '/calendar') {
+      //   view = 'calendar';
+      // } else if (path.startsWith('/pantry')) {
+      //   view = 'pantryManager';
+      //   const tabMatch = path.match(/^\/pantry\/(.+)$/);
+      //   if (tabMatch) {
+      //     activeTabParam = tabMatch[1];
+      //   }
+      // } else if (path === '/recipe') {
+      //   view = 'recipeManager';
+      // } else if (path === '/settings') {
+      //   view = 'settings';
+      // } else if (path === '/ai') {
+      //   view = 'aiAssistant';
+      // } else if (path === '/signup') {
+      //   view = 'signup';
+      // } else if (path === '/login') {
+      //   view = 'login';
+      // }
+
+      // setCurrentView(view);
+      // if (activeTabParam) {
+      //   setViewData({ activeTabParam });
+      // }
     }
   }, [isAuthenticated, loading]);
 
@@ -77,7 +97,7 @@ function AppContent() {
   }
   return <div className="w-full min-h-screen bg-gray-50">
     {currentView === 'login' && <Login onLoginSuccess={navigateToHome} onSignUp={navigateToSignUp} />}
-    {currentView === 'home' && isAuthenticated && <Home onCookWithWhatIHave={navigateToAiAssistant} onViewCalendar={navigateToCalendar} onManagePantry={navigateToPantryManager} onRecipeManager={navigateToRecipeManager} onSettings={navigateToSettings} />}
+    {currentView === 'home' && isAuthenticated && <Home onLogin={navigateToLogin} onCookWithWhatIHave={navigateToAiAssistant} onViewCalendar={navigateToCalendar} onManagePantry={navigateToPantryManager} onRecipeManager={navigateToRecipeManager} onSettings={navigateToSettings} />}
     {/* {currentView === 'suggestions' && isAuthenticated && <RecipeSuggestions onSelectRecipe={navigateToRecipeDetail} onBack={navigateToHome} />}
       {currentView === 'recipeDetail' && isAuthenticated && <RecipeDetail recipe={selectedRecipe} onBack={() => setCurrentView('suggestions')} />} */}
     {currentView === 'aiAssistant' && isAuthenticated && <AICookingAssistant onBack={navigateToHome} />}

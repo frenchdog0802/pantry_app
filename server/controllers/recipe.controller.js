@@ -1,6 +1,7 @@
 import Recipe from "../models/recipe.model.js";
 import RecipeIngredient from "../models/recipeIngredient.model.js";
 import Ingredient from "../models/ingredient.model.js";
+import { successResponse, errorResponse } from "../utils/apiResponse.js";
 
 // Create a new recipe
 export const createRecipe = async (req, res) => {
@@ -30,9 +31,9 @@ export const createRecipe = async (req, res) => {
             image_url: newRecipe.image_url,
             ingredients: items.ingredients,
         }
-        res.status(200).json(returnObject);
+        res.json(successResponse(returnObject));
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
@@ -64,16 +65,16 @@ export const getAllRecipes = async (req, res) => {
                 ingredients: returnIngredients,
             })
         }
-        res.status(200).json(returnRecipes);
+        res.json(successResponse(returnRecipes));
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.json(errorResponse({ message: err.message }));
     }
 };
 
 // Get a single recipe by ID
 export const getRecipeById = async (req, res) => {
     const recipe = await Recipe.findById(req.params.id);
-    if (!recipe) return res.status(404).json({ message: 'Recipe not found' });
+    if (!recipe) return res.json({ message: 'Recipe not found' });
     const returnIngredients = [];
     const ingredients = await RecipeIngredient.find({ recipe_id: recipe._id });
     for (const ingredient of ingredients) {
@@ -92,7 +93,7 @@ export const getRecipeById = async (req, res) => {
         image_url: recipe.image_url,
         ingredients: returnIngredients,
     }
-    res.status(200).json(returnObject);
+    res.json(successResponse(returnObject));
 };
 
 
@@ -131,15 +132,15 @@ export const updateRecipe = async (req, res) => {
         image_url: updatedRecipe.image_url,
         ingredients: returnIngredients,
     }
-    if (!updatedRecipe) return res.status(404).json({ message: 'Recipe not found' });
-    res.status(200).json(returnObject);
+    if (!updatedRecipe) return res.json({ message: 'Recipe not found' });
+    res.json(successResponse(returnObject));
 }
 // Delete a recipe
 export const deleteRecipe = async (req, res) => {
     const deletedRecipe = await Recipe.findByIdAndDelete(req.params.id);
     await RecipeIngredient.deleteMany({ recipe_id: req.params.id });
-    if (!deletedRecipe) return res.status(404).json({ message: 'Recipe not found' });
-    res.status(200).json({ message: 'Recipe deleted' });
+    if (!deletedRecipe) return res.json({ message: 'Recipe not found' });
+    res.json(successResponse({ message: 'Recipe deleted' }));
 };
 
 export default {

@@ -52,7 +52,7 @@ const signin = async (req, res) => {
 
     res.cookie(JWT_COOKIE_TOKEN_NAME, token, { expire: new Date() + 9999 });
 
-    const payload = { token, user: { _id: user._id, name: user.name, email: user.email } };
+    const payload = { token, user: { id: user._id, name: user.name, email: user.email } };
     console.log(`[${now()}] signin success for user=${user._id}`);
 
     return res.json(successResponse(payload));

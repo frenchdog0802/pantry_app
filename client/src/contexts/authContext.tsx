@@ -26,13 +26,27 @@ export const AuthProvider: React.FC<{
     const [loading, setLoading] = useState(true);
     // Check if user is already logged in
     useEffect(() => {
-      const checkAuth = async () => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser) as User);
+      const checkAuth = () => {
+        try {
+          const storedUser = localStorage.getItem('user');
+          const jwttoken = authHelper.getJWT();
+          if (storedUser && jwttoken) {
+            const parsedUser = JSON.parse(storedUser) as User;
+            if (parsedUser && parsedUser.name && parsedUser.id) {
+              setUser(parsedUser);
+            } else {
+              console.warn('Incomplete user data, clearing...');
+              localStorage.removeItem('user');
+            }
+          }
+        } catch (error) {
+          console.error('Auth check error:', error);
+          localStorage.removeItem('user');
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
       };
+
       checkAuth();
     }, []);
 
@@ -65,10 +79,9 @@ export const AuthProvider: React.FC<{
       try {
         const response = await auth.signin(email, password);
         if (response && response.data && response.success) {
-          const loggedInUser = ('data' in response.data ? response.data?.user : response.data) as User;
-          authHelper.authenticate(response.data?.token);
-          setUser(loggedInUser);
-          localStorage.setItem('user', JSON.stringify(loggedInUser));
+          authHelper.authenticate(response.data.token);
+          setUser(response.data.user);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
           authResponse.success = true;
         } else {
           authResponse.success = false;
