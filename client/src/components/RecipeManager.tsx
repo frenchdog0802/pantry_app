@@ -746,7 +746,7 @@ export function RecipeManager({
             </label>
             <div className="flex gap-2">
               {/* use NumberInput */}
-              <NumberInput min={0.1} value={currentIngredient.quantity} onChange={value => setCurrentIngredient({
+              <NumberInput min={0.1} step={0.5} value={currentIngredient.quantity} onChange={value => setCurrentIngredient({
                 ...currentIngredient,
                 quantity: value
               })} className="w-1/3 p-2 rounded-lg" />

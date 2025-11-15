@@ -278,7 +278,7 @@ export function PantryManager({
                 )}
 
                 <div className="flex gap-2">
-                  <NumberInput min={0.1} value={newShoppingItem.quantity} onChange={value => setNewShoppingItem({
+                  <NumberInput min={0.1} step={0.5} value={newShoppingItem.quantity} onChange={value => setNewShoppingItem({
                     ...newShoppingItem,
                     quantity: value
                   })} className="w-1/3 p-2 rounded-lg" />
@@ -420,7 +420,7 @@ export function PantryManager({
                   }
                   className="w-1/3 p-2 border border-gray-200 rounded-lg"
                 /> */}
-                <NumberInput min={0.1} value={newItem.quantity} onChange={value => setNewItem({
+                <NumberInput min={0.1} step={0.5} value={newItem.quantity} onChange={value => setNewItem({
                   ...newItem,
                   quantity: value
                 })} className="w-1/3 p-2  rounded-lg" />

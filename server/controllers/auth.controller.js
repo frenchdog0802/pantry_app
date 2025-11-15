@@ -1,7 +1,7 @@
 import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import { expressjwt } from "express-jwt";
-import config from "./../../config/config.js";
+import config from "./../../server/config/config.js";
 import axios from "axios";
 import { successResponse, errorResponse } from "../utils/apiResponse.js";
 

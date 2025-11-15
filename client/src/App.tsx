@@ -13,7 +13,6 @@ import { PantryProvider } from './contexts/pantryContext';
 import { AuthProvider, useAuth } from './contexts/authContext';
 import { AICookingAssistant } from './components/AICookingAssistant';
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import config from "../../config/config.js";
 import { useLocation } from 'react-router-dom';
 import { BottomNav } from './components/BottomNav';
 
@@ -119,7 +118,8 @@ function AppContent() {
 export function App() {
   return <AuthProvider>
     <PantryProvider>
-      <GoogleOAuthProvider clientId={config.googleClientId}>
+      {/*vite config  */}
+      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
         <AppContent />
       </GoogleOAuthProvider>
     </PantryProvider>
