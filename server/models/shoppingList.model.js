@@ -5,7 +5,7 @@ const ShoppingListSchema = new mongoose.Schema(
         user_id: { type: String, required: true },
         ingredient_id: { type: String, required: true },
         quantity: { type: Number },
-        unit: { type: String },
+        unit: { type: String, required: false },
         checked: { type: Boolean, default: false },
         createdAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
         updatedAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },

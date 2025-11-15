@@ -5,7 +5,7 @@ const RecipeIngredientSchema = new mongoose.Schema(
         recipe_id: { type: String, required: true },
         ingredient_id: { type: String, required: true },
         quantity: { type: Number, required: true },
-        unit: { type: String },
+        unit: { type: String, required: false },
         note: { type: String },
         // display_order: { type: Number },
         createdAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },

@@ -5,7 +5,7 @@ const PantryItemSchema = new mongoose.Schema(
         user_id: { type: String, required: true },
         ingredient_id: { type: String, ref: 'Ingredient', required: true },
         quantity: { type: Number, required: true },
-        unit: { type: String, required: true },
+        unit: { type: String, required: false },
         notes: { type: String },
         createdAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
         updatedAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
