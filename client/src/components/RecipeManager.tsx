@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ArrowLeftIcon, PlusIcon, TrashIcon, SearchIcon, CalendarIcon, EditIcon, XIcon, ImageIcon, PackageIcon, FolderIcon, ChevronRightIcon, HomeIcon, MoreVerticalIcon, FolderPlusIcon, PencilIcon, AlertCircleIcon } from 'lucide-react';
 import { usePantry } from '../contexts/pantryContext';
 import { IngredientEntry, Folder, Recipe } from '../api/types';
-
+import { NumberInput } from './NumberInput';
 // Using shared Recipe type from api/Types
 
 interface RecipeManagerProps {
@@ -742,13 +742,14 @@ export function RecipeManager({
           {/* Quantity Input */}
           {currentIngredient.name && <div className="mb-4">
             <label className="block text-sm text-gray-700 mb-1">
-              How much {currentIngredient.name} did you use?
+              How much {currentIngredient.name} you use?
             </label>
             <div className="flex gap-2">
-              <input type="number" min="1" value={currentIngredient.quantity} onChange={e => setCurrentIngredient({
+              {/* use NumberInput */}
+              <NumberInput min={0.1} value={currentIngredient.quantity} onChange={value => setCurrentIngredient({
                 ...currentIngredient,
-                quantity: parseInt(e.target.value) || 1
-              })} className="w-1/3 p-2 border border-gray-200 rounded-lg" />
+                quantity: value
+              })} className="w-1/3 p-2 rounded-lg" />
               <input type="text" placeholder="Unit (g, ml, etc.)" value={currentIngredient.unit} onChange={e => setCurrentIngredient({
                 ...currentIngredient,
                 unit: e.target.value

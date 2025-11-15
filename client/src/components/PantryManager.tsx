@@ -3,6 +3,8 @@ import { ArrowLeftIcon, PlusIcon, MinusIcon, TrashIcon, SearchIcon, PackageIcon,
 import { usePantry } from '../contexts/pantryContext';
 import { PantryItem } from '../api/types';
 import useSearchIngredients from '../hooks/useSearchIngredients';
+import { NumberInput } from './NumberInput';
+
 interface PantryManagerProps {
   onBack: () => void;
   onManagePantry: (activeTabParam: string) => void;
@@ -276,18 +278,10 @@ export function PantryManager({
                 )}
 
                 <div className="flex gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    value={newShoppingItem.quantity}
-                    onChange={(e) =>
-                      setNewShoppingItem({
-                        ...newShoppingItem,
-                        quantity: parseInt(e.target.value) || 1,
-                      })
-                    }
-                    className="w-1/3 p-2 border border-gray-200 rounded-lg"
-                  />
+                  <NumberInput min={0.1} value={newShoppingItem.quantity} onChange={value => setNewShoppingItem({
+                    ...newShoppingItem,
+                    quantity: value
+                  })} className="w-1/3 p-2 rounded-lg" />
                   <input
                     type="text"
                     placeholder="Unit (g, ml, etc.)"
@@ -413,7 +407,8 @@ export function PantryManager({
 
 
               <div className="flex gap-2">
-                <input
+
+                {/* <input
                   type="number"
                   min="1"
                   value={newItem.quantity}
@@ -424,7 +419,11 @@ export function PantryManager({
                     })
                   }
                   className="w-1/3 p-2 border border-gray-200 rounded-lg"
-                />
+                /> */}
+                <NumberInput min={0.1} value={newItem.quantity} onChange={value => setNewItem({
+                  ...newItem,
+                  quantity: value
+                })} className="w-1/3 p-2  rounded-lg" />
                 <input
                   type="text"
                   placeholder="Unit (g, ml, etc.)"

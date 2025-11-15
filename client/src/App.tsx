@@ -15,6 +15,7 @@ import { AICookingAssistant } from './components/AICookingAssistant';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import config from "../../config/config.js";
 import { useLocation } from 'react-router-dom';
+import { BottomNav } from './components/BottomNav';
 
 function AppContent() {
   const [currentView, setCurrentView] = useState('home');
@@ -62,6 +63,10 @@ function AppContent() {
     }
   }, [isAuthenticated, loading]);
 
+  const handleNavigate = (view: string) => {
+    setCurrentView(view);
+  };
+
   const navigateToSignUp = () => {
     setCurrentView('signup');
   };
@@ -106,6 +111,9 @@ function AppContent() {
     {currentView === 'recipeManager' && isAuthenticated && <RecipeManager onBack={navigateToHome} />}
     {currentView === 'settings' && isAuthenticated && <Settings onBack={navigateToHome} />}
     {currentView === 'signup' && <SignUp onSignUpSuccess={navigateToHome} onLogin={navigateToLogin} />}
+    {currentView !== 'login' && currentView !== 'signup' && (
+      <BottomNav activeView={currentView} onNavigate={handleNavigate} />
+    )}
   </div>;
 }
 export function App() {
