@@ -325,55 +325,55 @@ export function Calendar({
   }, [currentWeekStart]);
   return <div className="flex flex-col w-full min-h-screen bg-gray-50">
     {/* Header */}
-    <header className="bg-gradient-to-r from-orange-500 to-red-600 text-white p-5 shadow-md">
-      <div className="container mx-auto flex justify-between items-center">
-        <button onClick={onBack} className="p-2 rounded-full hover:bg-white/20 transition-colors" aria-label="Go back">
-          <ArrowLeftIcon size={24} />
+    <header className="fixed top-0 left-0 right-0 bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-md z-50">
+      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+        <button onClick={onBack} className="p-2 rounded-full hover:bg-white/20 transition-colors active:bg-white/30" aria-label="Go back">
+          <ArrowLeftIcon size={20} />
         </button>
         <h1 className="text-xl font-bold">Cooking Calendar</h1>
-        <button onClick={() => handleOpenAddRecipe(new Date())} className="p-2 rounded-full hover:bg-white/20 transition-colors" aria-label="Add Recipe">
-          <PlusIcon size={24} />
+        <button onClick={() => handleOpenAddRecipe(new Date())} className="p-2 rounded-full hover:bg-white/20 transition-colors active:bg-white/30" aria-label="Add Recipe">
+          <PlusIcon size={20} />
         </button>
       </div>
     </header>
     {/* Main Content */}
-    <main className="flex-1 container mx-auto p-5">
+    <main className="flex-1 overflow-y-auto pt-14 px-4 pb-4">
       {/* View Toggle */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
-        <div className="flex justify-between items-center mb-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-3 mb-4 mt-4">
+        <div className="flex justify-between items-center mb-3">
           <div className="flex space-x-2">
-            <button onClick={() => setViewMode('calendar')} className={`px-4 py-2 rounded-lg flex items-center ${viewMode === 'calendar' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-white text-gray-600 border border-gray-200'}`}>
-              <CalendarIcon size={18} className="mr-2" />
-              Calendar
+            <button onClick={() => setViewMode('calendar')} className={`px-4 py-2 rounded-xl flex items-center text-sm font-medium transition-all ${viewMode === 'calendar' ? 'bg-red-500 text-white shadow-sm' : 'bg-gray-50 text-gray-600'}`}>
+              <CalendarIcon size={18} className="mr-1.5" />
+              Month
             </button>
-            <button onClick={() => setViewMode('list')} className={`px-4 py-2 rounded-lg flex items-center ${viewMode === 'list' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-white text-gray-600 border border-gray-200'}`}>
-              <ListIcon size={18} className="mr-2" />
-              List
+            <button onClick={() => setViewMode('list')} className={`px-4 py-2 rounded-xl flex items-center text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-red-500 text-white shadow-sm' : 'bg-gray-50 text-gray-600'}`}>
+              <ListIcon size={18} className="mr-1.5" />
+              Week
             </button>
           </div>
         </div>
         {viewMode === 'calendar' && <>
           <div className="flex justify-between items-center">
-            <button onClick={previousMonth} className="p-2 rounded-full hover:bg-gray-100 text-gray-700" aria-label="Previous month">
-              <ChevronLeftIcon size={24} />
+            <button onClick={previousMonth} className="p-2 rounded-xl hover:bg-gray-50 text-gray-700 active:bg-gray-100 transition-colors" aria-label="Previous month">
+              <ChevronLeftIcon size={20} />
             </button>
-            <h2 className="text-xl font-bold text-gray-800">
+            <h2 className="text-base font-semibold text-gray-800">
               {monthNames[currentMonth]} {currentYear}
             </h2>
-            <button onClick={nextMonth} className="p-2 rounded-full hover:bg-gray-100 text-gray-700" aria-label="Next month">
-              <ChevronRightIcon size={24} />
+            <button onClick={nextMonth} className="p-2 rounded-xl hover:bg-gray-50 text-gray-700 active:bg-gray-100 transition-colors" aria-label="Next month">
+              <ChevronRightIcon size={20} />
             </button>
           </div>
           {/* Calendar Grid */}
-          <div className="mt-6">
+          <div className="mt-4">
             {/* Day names */}
-            <div className="grid grid-cols-7 mb-2">
-              {dayNames.map(day => <div key={day} className="text-center font-medium text-gray-500 py-2">
+            <div className="grid grid-cols-7 mb-1">
+              {dayNames.map(day => <div key={day} className="text-center text-xs font-medium text-gray-500 py-1">
                 {day}
               </div>)}
             </div>
             {/* Calendar days */}
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-7 gap-1">
               {calendarDays.map((day, index) => {
                 const isToday = day === new Date().getDate() && currentMonth === new Date().getMonth() && currentYear === new Date().getFullYear();
                 const isSelected = selectedDate && day === selectedDate.getDate() && currentMonth === selectedDate.getMonth() && currentYear === selectedDate.getFullYear();
@@ -388,19 +388,21 @@ export function Calendar({
                   snack: dayMeals.some((meal: MealPlan) => meal.meal_type === 'snack')
                 };
                 return <div key={index} onClick={() => handleDayClick(day)} className={`
-                          h-20 p-1 relative flex flex-col 
-                          ${day ? 'cursor-pointer hover:bg-gray-50' : ''}
-                          ${isSelected ? 'bg-gray-100 border border-gray-200' : day ? 'border border-gray-100' : ''}
-                          ${isToday ? 'font-bold border-red-300' : ''}
-                          rounded-lg transition-colors duration-200
+                          aspect-square p-1 relative flex flex-col justify-between
+                          ${day ? 'cursor-pointer active:scale-95' : ''}
+                          ${isSelected ? 'bg-red-50 border-2 border-red-400' : day ? 'bg-white border border-gray-100' : 'bg-transparent'}
+                          ${isToday && !isSelected ? 'border-2 border-red-300' : ''}
+                          rounded-lg transition-all duration-150
                         `}>
                   {day && <>
-                    <span className="text-sm ml-1 mt-1">{day}</span>
-                    <div className="flex flex-col gap-1 mt-auto mb-1">
-                      {hasMealTypes.breakfast && <div className="h-1.5 bg-blue-500 rounded-full mx-1"></div>}
-                      {hasMealTypes.lunch && <div className="h-1.5 bg-amber-500 rounded-full mx-1"></div>}
-                      {hasMealTypes.dinner && <div className="h-1.5 bg-red-500 rounded-full mx-1"></div>}
-                      {hasMealTypes.snack && <div className="h-1.5 bg-green-500 rounded-full mx-1"></div>}
+                    <span className={`text-xs ${isToday ? 'font-bold text-red-600' : 'text-gray-700'} leading-none`}>
+                      {day}
+                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      {hasMealTypes.breakfast && <div className="h-0.5 bg-blue-500 rounded-full"></div>}
+                      {hasMealTypes.lunch && <div className="h-0.5 bg-amber-500 rounded-full"></div>}
+                      {hasMealTypes.dinner && <div className="h-0.5 bg-red-500 rounded-full"></div>}
+                      {hasMealTypes.snack && <div className="h-0.5 bg-green-500 rounded-full"></div>}
                     </div>
                   </>}
                 </div>;
@@ -411,37 +413,37 @@ export function Calendar({
         {/* List View */}
         {viewMode === 'list' && <div className="mt-2">
           {/* Week Navigation Controls */}
-          <div className="flex justify-between items-center mb-4">
-            <button onClick={goToPreviousWeek} className="flex items-center text-gray-700 hover:text-gray-900 px-3 py-1 rounded-lg hover:bg-gray-100">
-              <ChevronLeftIcon size={18} className="mr-1" />
-              Previous Week
+          <div className="flex justify-between items-center mb-3">
+            <button onClick={goToPreviousWeek} className="flex items-center text-gray-700 hover:text-gray-900 px-2 py-1.5 rounded-lg hover:bg-gray-50 active:bg-gray-100 text-sm">
+              <ChevronLeftIcon size={16} className="mr-0.5" />
+              Prev
             </button>
             <div className="flex items-center">
-              <button onClick={goToCurrentWeek} className="px-3 py-1 text-sm rounded-lg bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100">
+              <button onClick={goToCurrentWeek} className="px-3 py-1.5 text-xs rounded-lg bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100 active:bg-blue-200 font-medium">
                 Today
               </button>
-              <span className="mx-3 font-medium text-gray-700">
+              <span className="mx-2 text-sm font-medium text-gray-700">
                 {getWeekRangeDisplay()}
               </span>
             </div>
-            <button onClick={goToNextWeek} className="flex items-center text-gray-700 hover:text-gray-900 px-3 py-1 rounded-lg hover:bg-gray-100">
-              Next Week
-              <ChevronRightIcon size={18} className="ml-1" />
+            <button onClick={goToNextWeek} className="flex items-center text-gray-700 hover:text-gray-900 px-2 py-1.5 rounded-lg hover:bg-gray-50 active:bg-gray-100 text-sm">
+              Next
+              <ChevronRightIcon size={16} className="ml-0.5" />
             </button>
           </div>
           {/* Week View */}
-          <div className="space-y-4">
+          <div className="space-y-2">
             {Object.entries(getWeekViewData()).sort(([dateA], [dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime()).map(([date, items]) => {
               const isExpanded = expandedDateGroups.includes(date);
               const hasItems = Array.isArray(items) && items.length > 0;
-              return <div key={date} className="border border-gray-200 rounded-lg overflow-hidden">
-                <div className={`px-4 py-3 flex justify-between items-center cursor-pointer ${hasItems ? 'bg-gray-50' : 'bg-white'}`} onClick={() => toggleDateGroupExpansion(date)}>
+              return <div key={date} className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+                <div className={`px-3 py-2.5 flex justify-between items-center cursor-pointer active:bg-gray-100 transition-colors ${hasItems ? 'bg-gray-50' : 'bg-white'}`} onClick={() => toggleDateGroupExpansion(date)}>
                   <div className="flex items-center">
                     <CalendarIcon size={16} className="text-gray-500 mr-2" />
-                    <h3 className="font-medium text-gray-800">
+                    <h3 className="font-medium text-sm text-gray-800">
                       {formatDisplayDate(date)}
                     </h3>
-                    {hasItems && <span className="ml-2 bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full">
+                    {hasItems && <span className="ml-2 bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full font-medium">
                       {items.length}
                     </span>}
                   </div>
@@ -450,10 +452,10 @@ export function Calendar({
                 {isExpanded && hasItems && <div className="divide-y divide-gray-100">
                   {items.map((item: MealPlan) => <div key={`${item.recipe_id}-${item.serving_date}-${item.meal_type}`} className="p-3 hover:bg-gray-50">
                     <div className="flex justify-between items-center">
-                      <div className="flex items-center">
-                        <div className={`w-2 h-2 rounded-full mr-3 ${getMealTypeIndicatorColor(item.meal_type)}`}></div>
-                        <div>
-                          <p className="font-medium text-gray-800">
+                      <div className="flex items-center flex-1 min-w-0">
+                        <div className={`w-1.5 h-1.5 rounded-full mr-2 flex-shrink-0 ${getMealTypeIndicatorColor(item.meal_type)}`}></div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm text-gray-800 truncate">
                             {item.meal_name}
                           </p>
                           <p className="text-xs text-gray-500">
@@ -461,11 +463,11 @@ export function Calendar({
                           </p>
                         </div>
                       </div>
-                      <div className="relative">
+                      <div className="relative ml-2">
                         <button onClick={e => {
                           e.stopPropagation();
                           toggleItemActions(`${item.recipe_id}-${item.serving_date}-${item.meal_type}`);
-                        }} className="p-1 rounded-full hover:bg-gray-200">
+                        }} className="p-2 rounded-full hover:bg-gray-100 active:bg-gray-200">
                           <MoreHorizontalIcon size={18} className="text-gray-500" />
                         </button>
                         {showItemActions === `${item.recipe_id}-${item.serving_date}-${item.meal_type}` && <div className="absolute right-0 mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
@@ -473,7 +475,7 @@ export function Calendar({
                             e.stopPropagation();
                             handleDeleteRecipe(item);
                             setShowItemActions(null);
-                          }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center">
+                          }} className="w-full text-left px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 active:bg-red-100 flex items-center rounded-xl">
                             <TrashIcon size={14} className="mr-2" />
                             Remove
                           </button>
@@ -482,13 +484,13 @@ export function Calendar({
                     </div>
                   </div>)}
                 </div>}
-                <div className="p-2 bg-gray-50 flex justify-center">
+                <div className="p-2 bg-gray-50 flex justify-center border-t border-gray-100">
                   <button onClick={e => {
                     e.stopPropagation();
                     const [year, month, day] = date.split('-').map(Number);
                     setSelectedDate(new Date(year, month - 1, day));
                     handleOpenAddRecipe(new Date(year, month - 1, day));
-                  }} className="text-sm text-red-600 hover:text-red-700 flex items-center px-3 py-1 rounded-lg hover:bg-red-50">
+                  }} className="text-sm text-red-600 hover:text-red-700 active:text-red-800 flex items-center px-3 py-1.5 rounded-lg hover:bg-red-50 active:bg-red-100 font-medium">
                     <PlusIcon size={14} className="mr-1" />
                     Add meal
                   </button>
@@ -499,48 +501,56 @@ export function Calendar({
         </div>}
       </div>
       {/* Selected Date History - Only show in calendar view */}
-      {viewMode === 'calendar' && selectedDate && <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold text-gray-800">
+      {viewMode === 'calendar' && selectedDate && <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="text-base font-semibold text-gray-800">
             {selectedDate.toLocaleDateString('en-US', {
               month: 'long',
               day: 'numeric',
               year: 'numeric'
             })}
           </h3>
-          <button onClick={() => handleOpenAddRecipe(selectedDate)} className="flex items-center text-sm bg-red-50 text-red-600 px-3 py-1.5 rounded-lg border border-red-100 hover:bg-red-100 transition-colors">
+          <button onClick={() => handleOpenAddRecipe(selectedDate)} className="flex items-center text-sm bg-red-500 text-white px-3 py-1.5 rounded-xl hover:bg-red-600 active:bg-red-700 transition-colors font-medium shadow-sm">
             <PlusIcon size={16} className="mr-1" />
-            Add Recipe
+            Add
           </button>
         </div>
         {getHistoryForSelectedDate().length > 0 ? <div>
-          <div className="flex items-center mb-3 space-x-3">
-            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-            <span className="text-sm text-gray-500">Breakfast</span>
-            <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
-            <span className="text-sm text-gray-500">Lunch</span>
-            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-            <span className="text-sm text-gray-500">Dinner</span>
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <span className="text-sm text-gray-500">Snack</span>
+          <div className="flex items-center mb-3 space-x-2 flex-wrap">
+            <div className="flex items-center">
+              <div className="w-2 h-2 bg-blue-500 rounded-full mr-1"></div>
+              <span className="text-xs text-gray-500">Breakfast</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-2 h-2 bg-amber-500 rounded-full mr-1"></div>
+              <span className="text-xs text-gray-500">Lunch</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-2 h-2 bg-red-500 rounded-full mr-1"></div>
+              <span className="text-xs text-gray-500">Dinner</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+              <span className="text-xs text-gray-500">Snack</span>
+            </div>
           </div>
           {Object.entries(getHistoryByMealType()).map(([type, meals]) => {
             if (meals.length === 0) return null;
-            return <div key={type} className="mb-6 last:mb-0">
-              <h4 className="text-md font-medium text-gray-700 mb-3">
+            return <div key={type} className="mb-4 last:mb-0">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">
                 {getMealTypeLabel(type)}:
               </h4>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {meals.map((item: MealPlan, index: number) => <div key={index} className={`p-4 rounded-lg border ${getMealTypeColor(type)}`}>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className={`w-2 h-2 rounded-full mr-3 ${type === 'breakfast' ? 'bg-blue-500' : type === 'lunch' ? 'bg-amber-500' : type === 'dinner' ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                      <p className="font-medium text-gray-800">
+                    <div className="flex items-center min-w-0 flex-1">
+                      <div className={`w-1.5 h-1.5 rounded-full mr-2 flex-shrink-0 ${type === 'breakfast' ? 'bg-blue-500' : type === 'lunch' ? 'bg-amber-500' : type === 'dinner' ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                      <p className="font-medium text-sm text-gray-800 truncate">
                         {item.meal_name}
                       </p>
-                      {item.image && <ImageIcon size={18} className="ml-2 text-gray-400" />}
+                      {item.image && <ImageIcon size={18} className="ml-2 text-gray-400 flex-shrink-0" />}
                     </div>
-                    <button onClick={() => handleDeleteRecipe(item)} className="p-1.5 rounded-full hover:bg-red-100 text-red-500 transition-colors" aria-label="Delete recipe">
+                    <button onClick={() => handleDeleteRecipe(item)} className="p-1.5 rounded-full hover:bg-red-100 active:bg-red-200 text-red-500 transition-colors ml-2 flex-shrink-0" aria-label="Delete recipe">
                       <TrashIcon size={16} />
                     </button>
                   </div>
@@ -561,18 +571,18 @@ export function Calendar({
     {/* Add Recipe Modal */}
     {showAddRecipeModal && <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-          <h3 className="font-medium text-gray-800">
+        <div className="p-4 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10 rounded-t-2xl">
+          <h3 className="font-semibold text-gray-800 text-base">
             Add Recipe to Calendar
           </h3>
-          <button onClick={() => setShowAddRecipeModal(false)} className="p-1 rounded-full hover:bg-gray-100">
+          <button onClick={() => setShowAddRecipeModal(false)} className="p-1.5 rounded-full hover:bg-gray-100 active:bg-gray-200">
             <XIcon size={20} className="text-gray-500" />
           </button>
         </div>
         <div className="p-6">
           <div className="space-y-4">
             <div>
-              <label htmlFor="meal-date" className="block text-gray-700 mb-2">
+              <label htmlFor="meal-date" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Date (Read-only)
               </label>
               <input type="text" id="meal-date" value={selectedDate ? selectedDate.toLocaleDateString('en-US', {
@@ -586,7 +596,7 @@ export function Calendar({
               })} readOnly className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-600" />
             </div>
             <div>
-              <label htmlFor="meal-type" className="block text-gray-700 mb-2">
+              <label htmlFor="meal-type" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Meal Type
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -596,7 +606,7 @@ export function Calendar({
               </div>
             </div>
             <div>
-              <label htmlFor="recipe-search" className="block text-gray-700 mb-2">
+              <label htmlFor="recipe-search" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Search & Select Recipe
               </label>
               <div className="relative" ref={dropdownRef}>
@@ -624,12 +634,12 @@ export function Calendar({
                 </div>}
               </div>
             </div>
-            <div className="flex gap-2 pt-4">
-              <button onClick={() => setShowAddRecipeModal(false)} className="w-1/2 bg-gray-100 text-gray-700 py-2 rounded-lg">
+            <div className="flex gap-2 pt-2">
+              <button onClick={() => setShowAddRecipeModal(false)} className="-1/2 bg-gray-100 text-gray-700 py-2.5 rounded-xl font-medium text-sm hover:bg-gray-200 active:bg-gray-300 transition-colors">
                 Cancel
               </button>
-              <button onClick={handleSaveRecipe} disabled={!selectedRecipeId} className={`w-1/2 ${selectedRecipeId ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'} py-2 rounded-lg transition-colors`}>
-                Add to Calendar
+              <button onClick={handleSaveRecipe} disabled={!selectedRecipeId} className={`w-1/2 py-2.5 rounded-xl font-medium text-sm transition-colors ${selectedRecipeId ? 'bg-red-500 text-white hover:bg-red-600 active:bg-red-700 shadow-sm' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+                Add
               </button>
             </div>
           </div>
@@ -639,19 +649,19 @@ export function Calendar({
     {/* Delete Confirmation Modal */}
     {showDeleteConfirmation && <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl shadow-lg max-w-sm w-full">
-        <div className="p-6">
-          <div className="flex items-center text-red-600 mb-4">
+        <div className="p-5">
+          <div className="flex items-center text-red-600 mb-3">
             <AlertCircleIcon size={24} className="mr-2" />
-            <h3 className="text-lg font-medium">Confirm Deletion</h3>
+            <h3 className="text-base font-semibold">Confirm Deletion</h3>
           </div>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 mb-5 text-sm">
             Are you sure you want to remove this recipe from your calendar?
           </p>
-          <div className="flex justify-end gap-3">
-            <button onClick={() => setShowDeleteConfirmation(false)} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setShowDeleteConfirmation(false)} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 rounded-xl transition-colors font-medium text-sm">
               Cancel
             </button>
-            <button onClick={confirmDeleteRecipe} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+            <button onClick={confirmDeleteRecipe} className="px-4 py-2 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-xl transition-colors font-medium text-sm shadow-sm">
               Delete
             </button>
           </div>
