@@ -34,17 +34,17 @@ export function BottomNav({
     label: 'Settings'
   }];
   return <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-      <div className="grid grid-cols-6 h-16">
-        {navItems.map(item => {
+    <div className="grid grid-cols-6 h-16 max-w-screen-lg mx-auto">
+      {navItems.map(item => {
         const Icon = item.icon;
         const isActive = activeView === item.id;
         return <button key={item.id} onClick={() => onNavigate(item.id)} className={`flex flex-col items-center justify-center transition-colors ${isActive ? 'text-red-600' : 'text-gray-500 hover:text-gray-700'}`}>
-              <Icon size={20} className={isActive ? 'stroke-[2.5]' : ''} />
-              <span className="text-[10px] mt-0.5 font-medium">
-                {item.label}
-              </span>
-            </button>;
+          <Icon size={20} className={isActive ? 'stroke-[2.5]' : ''} />
+          <span className="text-[10px] mt-0.5 font-medium">
+            {item.label}
+          </span>
+        </button>;
       })}
-      </div>
-    </nav>;
+    </div>
+  </nav>;
 }
