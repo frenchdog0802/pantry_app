@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeftIcon, PlusIcon, MinusIcon, TrashIcon, SearchIcon, PackageIcon, ShoppingCartIcon, CheckIcon } from 'lucide-react';
 import { usePantry } from '../contexts/pantryContext';
 import { PantryItem } from '../api/types';
@@ -15,11 +15,11 @@ export function PantryManager({
   activeTabParam = 'inventory' // Default to 'inventory' if not provided
 }: PantryManagerProps) {
   const {
-    pantryItems,
+    pantryItems: oriPantryItems,
     updatePantryItem,
     addPantryItem,
     removePantryItem,
-    shoppingList,
+    shoppingList: oriShoppingList,  // 改名 oriShoppingList 以區分
     ingredients,
     fetchAllIngredients,
     // shopping list functions
@@ -27,7 +27,10 @@ export function PantryManager({
     updateShoppingListItem,
     removeShoppingListItem
   } = usePantry();
-
+  const [pantryItems, setPantryItems] = useState<PantryItem[]>(oriPantryItems);
+  const [shoppingList, setShoppingList] = useState(oriShoppingList);  // 新增本地 shoppingList 狀態，同步 context
+  const [showMessage, setShowMessage] = useState(false);
+  const [message, setMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [newItem, setNewItem] = useState({
     name: '',
@@ -60,26 +63,41 @@ export function PantryManager({
   const [isAddingShoppingItem, setIsAddingShoppingItem] = useState(false);
   const isShoppingTab = activeTabParam === 'shopping';
   const [shoppingSearchQuery, setShoppingSearchQuery] = useState('');
-  // Count items that need to be bought (in shopping list)
-  const itemsToBuy = shoppingList.filter(item => !item.checked).length;
   // Filter pantry items based on search query and active tab
-  const filteredItems = pantryItems.filter(item => {
-    // if is not english dont toLowerCase, but if is english do toLowerCase
-    const isEnglish = /^[\x00-\x7F]*$/.test(item.name);
-    const matchesSearch = isEnglish
-      ? item.name.toLowerCase().includes(searchQuery.toLowerCase())
-      : item.name.includes(searchQuery);
-    return matchesSearch;
-  });
+  const filteredItems = useMemo(() => {
+    return pantryItems.filter(item => {
+      const isEnglish = /^[\x00-\x7F]*$/.test(item.name);
+      const matchesSearch = isEnglish
+        ? item.name.toLowerCase().includes(searchQuery.toLowerCase())
+        : item.name.includes(searchQuery);
+      return matchesSearch;
+    });
+  }, [pantryItems, searchQuery]);
+  useEffect(() => {
+    console.log('PantryItems updated:', pantryItems);
+  }, [pantryItems]);
 
+  // 同步 oriPantryItems 到本地 pantryItems
+  useEffect(() => {
+    setPantryItems(oriPantryItems);
+  }, [oriPantryItems]);
 
-  // Filter shopping list items
-  const filteredShoppingItems = shoppingList.filter(item => {
-    const isEnglish = /^[\x00-\x7F]*$/.test(item.name);
-    return isEnglish
-      ? item.name.toLowerCase().includes(shoppingSearchQuery.toLowerCase())
-      : item.name.includes(shoppingSearchQuery);
-  });
+  // 新增：同步 oriShoppingList 到本地 shoppingList
+  useEffect(() => {
+    setShoppingList(oriShoppingList);
+  }, [oriShoppingList]);
+
+  // Filter shopping list items（改用本地 shoppingList）
+  const filteredShoppingItems = useMemo(() => {  // 加 useMemo 優化
+    console.log('Recalculating filteredShoppingItems with query:', shoppingSearchQuery);
+    return shoppingList.filter(item => {
+      const isEnglish = /^[\x00-\x7F]*$/.test(item.name);
+      return isEnglish
+        ? item.name.toLowerCase().includes(shoppingSearchQuery.toLowerCase())
+        : item.name.includes(shoppingSearchQuery);
+    });
+  }, [shoppingList, shoppingSearchQuery]);  // 依賴 shoppingList 和 query
+
   const handleUpdateQuantity = (itemName: string, amount: number) => {
     const item = pantryItems.find(item => item.name === itemName);
     if (item) {
@@ -156,11 +174,41 @@ export function PantryManager({
     setIsAddingShoppingItem(false);
     setShowDropdown(false);
   };
-  const handleTogglePurchased = (id: string) => {
+  const handleTogglePurchased = async (id: string) => {
     const item = shoppingList.find(i => i.id === id);
     if (!item) return;
     const updatedItem = { ...item, checked: !item.checked };
-    updateShoppingListItem(updatedItem);
+    const res = await updateShoppingListItem(updatedItem);
+    if (res.success && res.data) {
+      setPantryItems(prevItems =>
+        prevItems.map(pantryItem =>
+          pantryItem.id === res.data.pantry_item_id
+            ? {
+              ...pantryItem,
+              quantity: res.data.new_quantity || pantryItem.quantity,
+              item_to_buy: updatedItem.checked ? 0 : res.data.new_item_to_buy || item.quantity
+            }
+            : pantryItem
+        )
+      );
+
+      setShoppingList(prevList =>
+        prevList.map(listItem =>
+          listItem.id === id
+            ? { ...listItem, checked: updatedItem.checked }
+            : listItem
+        )
+      );
+
+      if (!isShoppingTab && searchQuery) {
+        setSearchQuery('');
+      }
+
+      const newChecked = updatedItem.checked;
+      setMessage(newChecked ? 'Purchased! Added to your pantry. To Buy updated.' : 'Unmarked. To Buy restored.');
+      setShowMessage(true);
+      setTimeout(() => setShowMessage(false), 3000);
+    }
   };
   const handleRemoveShoppingItem = (id: string) => {
     if (removeShoppingListItem) {
@@ -186,6 +234,12 @@ export function PantryManager({
         {isShoppingTab ?
           // Shopping List Content
           <>
+            {/* Success Message Alert */}
+            {showMessage && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-green-800 text-sm font-medium animate-fade-in">
+                {message}
+              </div>
+            )}
             {/* Search Bar */}
             <div className="relative mb-6">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -459,7 +513,7 @@ export function PantryManager({
                         </span>
                       </div>
                       <span className="text-sm font-semibold text-blue-900">
-                        0
+                        {item.item_planned || 0}
                       </span>
                     </div>
                     <div className="bg-amber-50 rounded-lg p-2 text-center border border-amber-100">
@@ -470,7 +524,7 @@ export function PantryManager({
                         </span>
                       </div>
                       <span className="text-sm font-semibold text-amber-900">
-                        0
+                        {item.item_to_buy || 0}
                       </span>
                     </div>
                     <div className="bg-green-50 rounded-lg p-2 text-center border border-green-100">
@@ -481,7 +535,7 @@ export function PantryManager({
                         </span>
                       </div>
                       <span className="text-sm font-semibold text-green-900">
-                        {item.quantity}
+                        {item.quantity || 0}
                       </span>
                     </div>
                   </div>

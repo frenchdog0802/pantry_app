@@ -7,6 +7,7 @@ const ShoppingListSchema = new mongoose.Schema(
         quantity: { type: Number },
         unit: { type: String, required: false },
         checked: { type: Boolean, default: false },
+        has_been_added_to_pantry: { type: Boolean, default: false },
         createdAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
         updatedAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
     },

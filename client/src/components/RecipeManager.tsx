@@ -56,10 +56,7 @@ export function RecipeManager({
       quantity: 1,
       unit: '',
     }],
-    image: {
-      url: '',
-      public_id: '',
-    },
+    image: null as any,
     folder_id: '' as string,
     instructions: [] as string[],
   });
@@ -240,6 +237,29 @@ export function RecipeManager({
       }
     } catch (err) {
       console.error("Image upload error:", err);
+    }
+  };
+
+  // handle image removal
+  const handleImageRemove = async (publicId: string) => {
+    try {
+      const res = await ImageUploadApi.delete(publicId);
+      console.log("Image deletion response:", res);
+      if (res.success) {
+        if (isEditing && selectedRecipe) {
+          setSelectedRecipe({
+            ...selectedRecipe,
+            image: null as any,
+          });
+        } else {
+          setNewRecipe({
+            ...newRecipe,
+            image: null as any,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Image deletion error:", err);
     }
   };
 
@@ -606,13 +626,7 @@ export function RecipeManager({
                       </label>
                     </div> : <div className="relative rounded-xl overflow-hidden h-40">
                       <img src={selectedRecipe.image.url} alt="Meal" className="w-full h-full object-cover" />
-                      <button onClick={() => setSelectedRecipe({
-                        ...selectedRecipe,
-                        image: {
-                          url: '',
-                          public_id: '',
-                        }
-                      })} className="absolute top-2 right-2 bg-white/80 p-1 rounded-full hover:bg-white text-red-500" aria-label="Remove image">
+                      <button onClick={() => handleImageRemove(selectedRecipe.image.public_id)} className="absolute top-2 right-2 bg-white/80 p-1 rounded-full hover:bg-white text-red-500" aria-label="Remove image">
                         <XIcon size={20} />
                       </button>
                     </div>}
@@ -749,19 +763,33 @@ export function RecipeManager({
                   <label className="block text-gray-700 mb-2">
                     Recipe Image (optional)
                   </label>
-                  {!newRecipe.image ? <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center">
-                    <ImageIcon size={32} className="mx-auto text-gray-400 mb-2" />
-                    <p className="text-gray-500 mb-2">Add a photo of your Recipe</p>
-                    <label className="cursor-pointer bg-gray-50 hover:bg-gray-100 text-gray-700 py-2 px-4 rounded-lg border border-gray-200 inline-block transition-colors">
-                      Upload Image
-                      <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                    </label>
-                  </div> : <div className="relative rounded-xl overflow-hidden">
-                    <img src={newRecipe.image.url} alt="Meal" className="w-full h-48 object-cover" />
-                    <button onClick={() => setNewRecipe({ ...newRecipe, image: { url: '', public_id: '' } })} className="absolute top-2 right-2 bg-white/80 p-1 rounded-full hover:bg-white text-red-500" aria-label="Remove image">
-                      <XIcon size={20} />
-                    </button>
-                  </div>}
+                  {!newRecipe.image ? (
+                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center">
+                      <ImageIcon size={32} className="mx-auto text-gray-400 mb-2" />
+                      <p className="text-gray-500 mb-2">Add a photo of your Recipe</p>
+                      <label className="cursor-pointer bg-gray-50 hover:bg-gray-100 text-gray-700 py-2 px-4 rounded-lg border border-gray-200 inline-block transition-colors">
+                        Upload Image
+                        <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="relative rounded-xl overflow-hidden aspect-[4/3]">
+                      <img
+                        src={newRecipe.image.url}
+                        alt="Recipe photo"
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+
+                      <button
+                        onClick={() => handleImageRemove(newRecipe.image!.public_id)}
+                        className="absolute top-2 right-2 bg-white/80 p-1 rounded-full hover:bg-white text-red-500"
+                        aria-label="Remove image"
+                      >
+                        <XIcon size={20} />
+                      </button>
+                    </div>
+                  )}
                 </div>
                 {/* Items List */}
                 <div>

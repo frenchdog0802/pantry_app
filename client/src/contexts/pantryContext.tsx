@@ -1,5 +1,5 @@
 import React, { useState, createContext, useContext, useEffect } from 'react';
-import { PantryItem, ShoppingListItem, Recipe, Folder, UserSettings, IngredientEntry, MealPlan } from '../api/types';
+import { PantryItem, ShoppingListItem, Recipe, Folder, UserSettings, IngredientEntry, MealPlan, ApiResponse } from '../api/types';
 import { recipeApi } from '../api/recipes';
 import { folderApi } from '../api/folder';
 import { PantryItemApi } from '../api/pantryItem';
@@ -39,7 +39,7 @@ interface PantryContextType {
   // shopping List
   shoppingList: ShoppingListItem[];
   fetchAllShoppingListItems: () => void;
-  updateShoppingListItem: (item: ShoppingListItem) => void;
+  updateShoppingListItem: (item: ShoppingListItem) => Promise<ApiResponse>;
   addShoppingListItem: (item: Omit<ShoppingListItem, 'id'>) => void;
   removeShoppingListItem?: (id: string) => void;
 
@@ -261,10 +261,10 @@ export function PantryProvider({
       console.error('Fetch shopping list items failed:', err);
     }
   };
-  const updateShoppingListItem = (item: ShoppingListItem) => {
+  const updateShoppingListItem = async (item: ShoppingListItem) => {
     setShoppingList(prev => prev.map(i => i.id === item.id ? item : i));
-    shoppingListApi.update(item.id, item);
-  };
+    return await shoppingListApi.update(item.id, item);
+  }
 
   const addShoppingListItem = async (item: Omit<ShoppingListItem, 'id'>) => {
     // temporary item for optimistic UI

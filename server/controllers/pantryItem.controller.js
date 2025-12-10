@@ -108,14 +108,30 @@ export const getAllPantryItems = async (req, res) => {
         const shoppingListItems = await ShoppingListItem.find({ user_id: userId });
         // find planned meals from meal plan serving_date greater than today 
         const today = new Date().toISOString().split('T')[0];
-        const mealPlans = await MealPlan.find({ user_id: userId, serving_date: { $gte: today } });
+        // unix timestamp at start of today
+        const startOfToday = new Date(today).getTime();
+        const mealPlans = await MealPlan.find({ user_id: userId, serving_date: { $gte: startOfToday } });
         // find recipe ingredients from meal plans
         const recipeIngredients = await RecipeIngredient.find({ recipe_id: { $in: mealPlans.map(mp => mp.recipe_id) } });
+        // sum quantity of meal plan ingredients by ingredient_id
+        const ingredientQuantityMap = {};
+        for (const mealPlan of mealPlans) {
+            const ingredients = await RecipeIngredient.find({ recipe_id: mealPlan.recipe_id });
+            for (const ingredient of ingredients) {
+                if (ingredientQuantityMap[ingredient.ingredient_id]) {
+                    ingredientQuantityMap[ingredient.ingredient_id] += ingredient.quantity;
+                } else {
+                    ingredientQuantityMap[ingredient.ingredient_id] = ingredient.quantity;
+                }
+            }
+        }
         // find name from ingredient model
         const itemsWithNames = await Promise.all(pantryItems.map(async (item) => {
             const ingredient = await Ingredient.findById(item.ingredient_id);
-            const itemToBuy = shoppingListItems.find(sItem => sItem.ingredient_id === item.ingredient_id);
-            const itemPlanned = recipeIngredients.find(rIngredient => rIngredient.ingredient_id === item.ingredient_id);
+            const itemToBuy = shoppingListItems.find(sItem => sItem.ingredient_id === item.ingredient_id && sItem.checked === false);
+            const itemPlanned = {
+                quantity: ingredientQuantityMap[item.ingredient_id] || 0
+            };
             return {
                 id: item._id.toString(),
                 user_id: item.user_id,

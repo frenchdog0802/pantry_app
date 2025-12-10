@@ -29,4 +29,24 @@ export const ImageUploadApi = {
         const json = (await res.json()) as ApiResponse<{ image_url: string, public_id: string }>;
         return json;
     },
+    delete: async (publicId: string): Promise<ApiResponse<null>> => {
+        const stored = localStorage.getItem("jwt");
+        let token = "";
+        if (stored) {
+            try {
+                token = JSON.parse(stored);
+            } catch {
+                token = stored;
+            }
+        }
+
+        const res = await fetch(`${BASE_URL}/api/upload/image/${encodeURIComponent(publicId)}`, {
+            method: "DELETE",
+            headers: {
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+        });
+        const json = (await res.json()) as ApiResponse<null>;
+        return json;
+    },
 };

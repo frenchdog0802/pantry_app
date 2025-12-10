@@ -41,6 +41,28 @@ const uploadImage = [
     },
 ];
 
+const deleteImage = async (req, res) => {
+    try {
+        const { public_id } = req.params;
+        if (!public_id) {
+            return res
+                .status(400)
+                .json(errorResponse({ message: "No public_id provided" }));
+        }
+        const result = await cloudinary.uploader.destroy(public_id);
+        if (result.result !== "ok") {
+            return res
+                .status(500)
+                .json(errorResponse({ message: "Failed to delete image" }));
+        }
+        return res.json(successResponse({ message: "Image deleted successfully" }));
+    } catch (err) {
+        return res
+            .status(500)
+            .json(errorResponse({ message: err.message }));
+    }
+};
+
 export default {
-    uploadImage,
+    uploadImage, deleteImage
 };

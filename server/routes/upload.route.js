@@ -5,5 +5,7 @@ const router = express.Router();
 
 router.post('/image', auth.requireSignin, cloudinaryCtrl.uploadImage);
 
+router.delete('/image/:public_id', auth.requireSignin, cloudinaryCtrl.deleteImage);
+
 
 export default router;

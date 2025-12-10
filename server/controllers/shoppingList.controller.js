@@ -1,5 +1,6 @@
 import ShoppingListItem from "../models/shoppingList.model.js";
 import Ingredient from "../models/ingredient.model.js";
+import PantryItem from "../models/pantryItem.model.js";
 import { successResponse, errorResponse } from "../utils/apiResponse.js";
 
 // Insert all shopping list items
@@ -110,7 +111,8 @@ export const getAllShoppingListItems = async (req, res) => {
                 ingredient_id: item.ingredient_id,
                 quantity: item.quantity,
                 name: ingredient ? ingredient.name : "Unknown",
-                unit: ingredient ? item.unit : ingredient.default_unit
+                unit: ingredient ? item.unit : ingredient.default_unit,
+                checked: item.checked,
             };
         }));
         res.json(successResponse(itemsWithNames));
@@ -129,20 +131,114 @@ export const getShoppingListItemById = async (req, res) => {
         res.json(errorResponse({ message: err.message }));
     }
 };
-
 // Update a shopping list item
 export const updateShoppingListItem = async (req, res) => {
     try {
-        const updatedShoppingListItem = await ShoppingListItem.findByIdAndUpdate(
+        const updatedItem = await ShoppingListItem.findByIdAndUpdate(
             req.params.id,
             req.body,
             { new: true }
         );
-        if (!updatedShoppingListItem) return res.json({ message: 'Shopping list item not found' });
-        res.json(successResponse(updatedShoppingListItem));
+
+        if (!updatedItem) {
+            return res.json({ message: 'Shopping list item not found' });
+        }
+
+        console.log('Updated shopping list item:', updatedItem);
+
+        const resultItem = {
+            id: updatedItem._id.toString(),
+            pantry_item_id: '',
+            new_quantity: updatedItem.quantity,
+            new_item_to_buy: updatedItem.quantity,
+            checked: updatedItem.checked,
+        };
+
+        // Handle pantry synchronization based on checked status
+        if (updatedItem.checked) {
+            await handleCheckItem(updatedItem, resultItem);
+        } else if (updatedItem.has_been_added_to_pantry) {
+            await handleUncheckItem(updatedItem, resultItem);
+        }
+
+        res.json(successResponse(resultItem));
     } catch (err) {
         res.json(errorResponse({ message: err.message }));
     }
+};
+
+/**
+ * Handles adding/updating the item in pantry when checked.
+ * @param {Object} shoppingItem - The updated shopping list item.
+ * @param {Object} resultItem - The result object to update.
+ */
+const handleCheckItem = async (shoppingItem, resultItem) => {
+    if (shoppingItem.has_been_added_to_pantry) {
+        return; // Already added, no action needed
+    }
+
+    const { user_id, ingredient_id, quantity, unit } = shoppingItem;
+    const existingPantryItem = await PantryItem.findOne({
+        user_id,
+        ingredient_id,
+    });
+
+    let newPantryQuantity;
+    if (existingPantryItem) {
+        newPantryQuantity = (existingPantryItem.quantity || 0) + (quantity || 0);
+        existingPantryItem.quantity = newPantryQuantity;
+        await existingPantryItem.save();
+    } else {
+        await PantryItem.create({
+            user_id,
+            ingredient_id,
+            quantity: quantity || 0,
+            unit: unit || '',
+        });
+        newPantryQuantity = quantity || 0;
+    }
+
+    // Update shopping item flag
+    shoppingItem.has_been_added_to_pantry = true;
+    await shoppingItem.save();
+
+    // Update result
+    resultItem.new_quantity = newPantryQuantity;
+    resultItem.new_item_to_buy = 0;
+    resultItem.pantry_item_id = existingPantryItem ? existingPantryItem._id.toString() : '';
+};
+
+/**
+ * Handles subtracting the item from pantry when unchecked.
+ * @param {Object} shoppingItem - The updated shopping list item.
+ * @param {Object} resultItem - The result object to update.
+ */
+const handleUncheckItem = async (shoppingItem, resultItem) => {
+    const { user_id, ingredient_id, quantity } = shoppingItem;
+    const pantryItem = await PantryItem.findOne({
+        user_id,
+        ingredient_id,
+    });
+
+    if (!pantryItem) {
+        return; // No pantry item to update
+    }
+
+    const newPantryQuantity = Math.max(
+        0,
+        (pantryItem.quantity || 0) - (quantity || 0)
+    );
+    pantryItem.quantity = newPantryQuantity;
+    await pantryItem.save();
+
+    // Update shopping item flag
+    shoppingItem.has_been_added_to_pantry = false;
+    await shoppingItem.save();
+
+    // Update result
+    resultItem.new_quantity = newPantryQuantity;
+    resultItem.new_item_to_buy = quantity || 0;
+    resultItem.pantry_item_id = pantryItem._id.toString();
 };
 
 // Delete a shopping list item

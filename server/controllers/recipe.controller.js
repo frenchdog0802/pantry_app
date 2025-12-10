@@ -68,6 +68,7 @@ export const getAllRecipes = async (req, res) => {
                 meal_name: recipe.meal_name,
                 instructions: recipe.instructions,
                 ingredients: returnIngredients,
+                image: recipe.image,
             })
         }
         res.json(successResponse(returnRecipes));
@@ -96,6 +97,7 @@ export const getRecipeById = async (req, res) => {
         meal_name: recipe.meal_name,
         instructions: recipe.instructions,
         ingredients: returnIngredients,
+        image: recipe.image,
     }
     res.json(successResponse(returnObject));
 };
@@ -140,6 +142,7 @@ export const updateRecipe = async (req, res) => {
         meal_name: updatedRecipe.meal_name,
         instructions: updatedRecipe.instructions,
         ingredients: returnIngredients,
+        image: updatedRecipe.image,
     }
     if (!updatedRecipe) return res.json({ message: 'Recipe not found' });
     res.json(successResponse(returnObject));
