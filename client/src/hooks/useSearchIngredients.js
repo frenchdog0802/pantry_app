@@ -36,7 +36,7 @@ const useSearchIngredients = (searchTerm, pantryItems, ingredients, fetchAllIngr
                             id: i.id,
                             name: i.name,
                             quantity: i.quantity ?? 1,
-                            unit: i.unit ?? ""
+                            unit: i.default_unit ?? ""
                         }))
                 ];
                 setFilteredIngredients(combined);

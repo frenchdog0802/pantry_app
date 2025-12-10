@@ -12,8 +12,7 @@ interface PantryManagerProps {
 }
 export function PantryManager({
   onBack,
-  onManagePantry,
-  activeTabParam
+  activeTabParam = 'inventory' // Default to 'inventory' if not provided
 }: PantryManagerProps) {
   const {
     pantryItems,
@@ -28,6 +27,7 @@ export function PantryManager({
     updateShoppingListItem,
     removeShoppingListItem
   } = usePantry();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [newItem, setNewItem] = useState({
     name: '',
@@ -58,7 +58,7 @@ export function PantryManager({
   const [showDropdown, setShowDropdown] = useState(false);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [isAddingShoppingItem, setIsAddingShoppingItem] = useState(false);
-  const [activeTab, setActiveTab] = useState(activeTabParam); // 'inventory' or 'shopping'
+  const isShoppingTab = activeTabParam === 'shopping';
   const [shoppingSearchQuery, setShoppingSearchQuery] = useState('');
   // Count items that need to be bought (in shopping list)
   const itemsToBuy = shoppingList.filter(item => !item.checked).length;
@@ -176,51 +176,14 @@ export function PantryManager({
             <ArrowLeftIcon size={24} />
           </button>
           <h1 className="text-xl font-bold">
-            {activeTab === 'shopping' ? 'Shopping List' : 'Kitchen Inventory'}
+            {isShoppingTab ? 'Shopping List' : 'Kitchen Inventory'}
           </h1>
           <div className="w-10"></div> {/* For layout balance */}
         </div>
       </header>
       {/* Main Content */}
       <main className="flex-1 container mx-auto p-5">
-        {/* Kitchen Stats */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-          <h3 className="font-medium text-gray-700 mb-4 text-lg">
-            My Kitchen Stats
-          </h3>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="bg-gray-50 p-5 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:bg-pink-50 hover:border-pink-100 transition-colors" onClick={() => setActiveTab('inventory')}>
-              <div className="flex items-center">
-                <div className="text-3xl font-bold text-red-600 mb-1 mr-2">
-                  {pantryItems.length}
-                </div>
-                {pantryItems.length > 0 && <PackageIcon size={20} className="text-red-600" />}
-              </div>
-              <p className="text-gray-600">Items in Pantry</p>
-            </div>
-            <div className="bg-gray-50 p-5 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:bg-blue-50 hover:border-blue-100 transition-colors" onClick={() => setActiveTab('shopping')}>
-              <div className="flex items-center">
-                <div className="text-3xl font-bold text-blue-600 mb-1 mr-2">
-                  {itemsToBuy}
-                </div>
-                {itemsToBuy > 0 && <ShoppingCartIcon size={20} className="text-blue-600" />}
-              </div>
-              <p className="text-gray-600">Items to Buy</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Tabs */}
-        <div className="flex mb-6 bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200">
-          <button onClick={() => setActiveTab('inventory')} className={`flex-1 py-3 px-4 font-medium ${activeTab === 'inventory' ? 'bg-red-50 text-red-600' : 'text-gray-700'}`}>
-            Inventory
-          </button>
-          <button onClick={() => setActiveTab('shopping')} className={`flex-1 py-3 px-4 font-medium ${activeTab === 'shopping' ? 'bg-blue-50 text-blue-600' : 'text-gray-700'}`}>
-            Shopping List
-          </button>
-        </div>
-
-        {activeTab === 'shopping' ?
+        {isShoppingTab ?
           // Shopping List Content
           <>
             {/* Search Bar */}
@@ -408,19 +371,6 @@ export function PantryManager({
 
 
                 <div className="flex gap-2">
-
-                  {/* <input
-                  type="number"
-                  min="1"
-                  value={newItem.quantity}
-                  onChange={(e) =>
-                    setNewItem({
-                      ...newItem,
-                      quantity: parseInt(e.target.value) || 1,
-                    })
-                  }
-                  className="w-1/3 p-2 border border-gray-200 rounded-lg"
-                /> */}
                   <NumberInput min={0.1} step={0.5} value={newItem.quantity} onChange={value => setNewItem({
                     ...newItem,
                     quantity: value
@@ -458,46 +408,100 @@ export function PantryManager({
 
 
             {/* Pantry Items List */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="p-4 border-b border-gray-100 bg-gray-50">
-                <h2 className="font-semibold text-gray-800">
-                  Current Inventory
-                </h2>
+            <div className="bg-white rounded-xl p-3 mb-4 shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                  <span className="text-gray-600 font-medium">Planned</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                  <span className="text-gray-600 font-medium">To Buy</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  <span className="text-gray-600 font-medium">Pantry</span>
+                </div>
               </div>
-              {filteredItems.length === 0 ? <div className="p-6 text-center">
-                <p className="text-gray-500">No items found</p>
-                {searchQuery && <p className="text-gray-400 text-sm mt-1">
+            </div>
+
+            <div className="space-y-3">
+              {filteredItems.length === 0 ? <div className="bg-white rounded-xl p-6 text-center shadow-sm border border-gray-100">
+                <PackageIcon size={32} className="mx-auto mb-2 text-gray-300" />
+                <p className="text-gray-500 text-sm">No items found</p>
+                {searchQuery && <p className="text-gray-400 text-xs mt-1">
                   Try a different search term
                 </p>}
-              </div> : <ul className="divide-y divide-gray-100">
-                {filteredItems.map(item => {
-                  return <li key={item.id} className={`p-4`}>
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="font-medium text-gray-800 capitalize">
-                          {item.name}
-                        </h3>
-                        <div className="flex items-center">
-                          <p className="text-gray-500 text-sm mr-2">
-                            {item.quantity} {item.unit}
-                          </p>
-                        </div>
+              </div> : filteredItems.map(item => <div key={item.name} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                {/* Item Header */}
+                <div className="p-4 pb-3">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-800 capitalize truncate">
+                        {item.name}
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {item.unit}
+                      </p>
+                    </div>
+                    <button onClick={() => handleRemoveItem(item.name)} className="p-2 rounded-lg hover:bg-red-50 active:bg-red-100 text-red-500 transition-colors -mr-2" aria-label="Remove item">
+                      <TrashIcon size={16} />
+                    </button>
+                  </div>
+
+                  {/* Status Grid */}
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    <div className="bg-blue-50 rounded-lg p-2 text-center border border-blue-100">
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                        <span className="text-xs font-medium text-blue-700">
+                          Planned
+                        </span>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <button onClick={() => handleUpdateQuantity(item.name, -1)} className="p-1 rounded-full hover:bg-gray-100" aria-label="Decrease quantity">
-                          <MinusIcon size={18} className="text-gray-600" />
-                        </button>
-                        <button onClick={() => handleUpdateQuantity(item.name, 1)} className="p-1 rounded-full hover:bg-gray-100" aria-label="Increase quantity">
-                          <PlusIcon size={18} className="text-gray-600" />
-                        </button>
-                        <button onClick={() => handleRemoveItem(item.name)} className="p-1 rounded-full hover:bg-red-50 text-red-500" aria-label="Remove item">
-                          <TrashIcon size={18} />
-                        </button>
+                      <span className="text-sm font-semibold text-blue-900">
+                        0
+                      </span>
+                    </div>
+                    <div className="bg-amber-50 rounded-lg p-2 text-center border border-amber-100">
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                        <span className="text-xs font-medium text-amber-700">
+                          To Buy
+                        </span>
+                      </div>
+                      <span className="text-sm font-semibold text-amber-900">
+                        0
+                      </span>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-2 text-center border border-green-100">
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                        <span className="text-xs font-medium text-green-700">
+                          Pantry
+                        </span>
+                      </div>
+                      <span className="text-sm font-semibold text-green-900">
+                        {item.quantity}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Quantity Controls */}
+                  <div className="flex items-center justify-center gap-3 pt-2 border-t border-gray-100">
+                    <button onClick={() => handleUpdateQuantity(item.name, -1)} className="p-2.5 rounded-lg bg-gray-100 hover:bg-gray-200 active:bg-gray-300 transition-colors" aria-label="Decrease quantity">
+                      <MinusIcon size={18} className="text-gray-700" />
+                    </button>
+                    <div className="text-center min-w-[60px]">
+                      <div className="text-2xl font-bold text-gray-800">
+                        {item.quantity}
                       </div>
                     </div>
-                  </li>;
-                })}
-              </ul>}
+                    <button onClick={() => handleUpdateQuantity(item.name, 1)} className="p-2.5 rounded-lg bg-red-500 hover:bg-red-600 active:bg-red-700 transition-colors" aria-label="Increase quantity">
+                      <PlusIcon size={18} className="text-white" />
+                    </button>
+                  </div>
+                </div>
+              </div>)}
             </div>
           </>}
       </main>

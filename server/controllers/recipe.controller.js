@@ -12,24 +12,30 @@ export const createRecipe = async (req, res) => {
             folder_id: items.folder_id,
             meal_name: items.meal_name,
             instructions: items.instructions,
-            image_url: items.image_url,
+            image: items.image
         })
         if (Array.isArray(items.ingredients) && items.ingredients.length > 0) {
-            const docs = items.ingredients.map(ingredient => ({
-                recipe_id: newRecipe._id,
-                ingredient_id: ingredient.id,
-                quantity: ingredient.quantity,
-                unit: ingredient.unit,
+            const recipeIngredientsToInsert = await Promise.all(items.ingredients.map(async (itemIngredient) => {
+                let ingredientRecord = await Ingredient.findOne({ name: itemIngredient.name });
+                if (!ingredientRecord) {
+                    ingredientRecord = await Ingredient.create({ name: itemIngredient.name, default_unit: itemIngredient.unit });
+                }
+                return {
+                    recipe_id: newRecipe._id,
+                    ingredient_id: ingredientRecord._id,
+                    quantity: itemIngredient.quantity,
+                    unit: itemIngredient.unit,
+                };
             }));
-            await RecipeIngredient.insertMany(docs);
+            await RecipeIngredient.insertMany(recipeIngredientsToInsert);
         }
 
         const returnObject = {
             id: newRecipe._id,
             meal_name: newRecipe.meal_name,
             instructions: newRecipe.instructions,
-            image_url: newRecipe.image_url,
             ingredients: items.ingredients,
+            image: newRecipe.image,
         }
         res.json(successResponse(returnObject));
     } catch (err) {
@@ -61,7 +67,6 @@ export const getAllRecipes = async (req, res) => {
                 folder_id: recipe.folder_id,
                 meal_name: recipe.meal_name,
                 instructions: recipe.instructions,
-                image_url: recipe.image_url,
                 ingredients: returnIngredients,
             })
         }
@@ -90,7 +95,6 @@ export const getRecipeById = async (req, res) => {
         id: recipe._id,
         meal_name: recipe.meal_name,
         instructions: recipe.instructions,
-        image_url: recipe.image_url,
         ingredients: returnIngredients,
     }
     res.json(successResponse(returnObject));
@@ -105,13 +109,19 @@ export const updateRecipe = async (req, res) => {
     // Update recipeIngredients
     await RecipeIngredient.deleteMany({ recipe_id: req.params.id });
     if (Array.isArray(items.ingredients) && items.ingredients.length > 0) {
-        const docs = items.ingredients.map(ingredient => ({
-            recipe_id: updatedRecipe._id,
-            ingredient_id: ingredient.id,
-            quantity: ingredient.quantity,
-            unit: ingredient.unit,
+        const recipeIngredientsToInsert = await Promise.all(items.ingredients.map(async (itemIngredient) => {
+            let ingredientRecord = await Ingredient.findOne({ name: itemIngredient.name });
+            if (!ingredientRecord) {
+                ingredientRecord = await Ingredient.create({ name: itemIngredient.name, unit: itemIngredient.unit });
+            }
+            return {
+                recipe_id: req.params.id,
+                ingredient_id: ingredientRecord._id,
+                quantity: itemIngredient.quantity,
+                unit: itemIngredient.unit,
+            };
         }));
-        await RecipeIngredient.insertMany(docs);
+        await RecipeIngredient.insertMany(recipeIngredientsToInsert);
     }
 
     const returnIngredients = [];
@@ -129,7 +139,6 @@ export const updateRecipe = async (req, res) => {
         id: updatedRecipe._id,
         meal_name: updatedRecipe.meal_name,
         instructions: updatedRecipe.instructions,
-        image_url: updatedRecipe.image_url,
         ingredients: returnIngredients,
     }
     if (!updatedRecipe) return res.json({ message: 'Recipe not found' });

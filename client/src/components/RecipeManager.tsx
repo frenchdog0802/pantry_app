@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { ArrowLeftIcon, PlusIcon, TrashIcon, SearchIcon, CalendarIcon, EditIcon, XIcon, ImageIcon, PackageIcon, FolderIcon, ChevronRightIcon, HomeIcon, MoreVerticalIcon, FolderPlusIcon, PencilIcon, AlertCircleIcon } from 'lucide-react';
 import { usePantry } from '../contexts/pantryContext';
 import { IngredientEntry, Folder, Recipe } from '../api/types';
-import { NumberInput } from './NumberInput';
-// Using shared Recipe type from api/Types
+import { ImageUploadApi } from '../api/ImageUploader';
+import { compressImage } from '../utils/imageHelper';
+
 
 interface RecipeManagerProps {
   onBack: () => void;
@@ -25,13 +26,13 @@ export function RecipeManager({
     deleteFolder,
     updateFolder,
     folders: savedFolders,
-    pantryItems
+    ingredients,
+    fetchAllIngredients,
   } = usePantry();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddRecipe, setShowAddRecipe] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [showIngredientSelector, setShowIngredientSelector] = useState(false);
   // Folders state
   const [folders, setFolders] = useState<Folder[]>(savedFolders);
   const [currentFolder, setCurrentFolder] = useState<Folder | null>(null);
@@ -41,20 +42,31 @@ export function RecipeManager({
   const [showFolderActions, setShowFolderActions] = useState<string | null>(null);
   const [showDeleteFolderConfirmation, setShowDeleteFolderConfirmation] = useState(false);
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
-  const [currentIngredient, setCurrentIngredient] = useState<IngredientEntry>({} as IngredientEntry);
   const [recipes, setRecipes] = useState<Recipe[]>(storedRecipes);
+  const [itemSearchQuery, setItemSearchQuery] = useState<string>('');
+  const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
+  const [showIngredientDropdown, setShowIngredientDropdown] = useState(false);
+  const ingredientDropdownRef = useRef<HTMLDivElement>(null);
   const [newRecipeError, setNewRecipeError] = useState<string>('');
   const [newRecipe, setNewRecipe] = useState<Recipe>({
     id: '',
     meal_name: '',
-    ingredients: [],
-    image: null,
+    ingredients: [{
+      name: '',
+      quantity: 1,
+      unit: '',
+    }],
+    image: {
+      url: '',
+      public_id: '',
+    },
     folder_id: '' as string,
     instructions: [] as string[],
   });
   useEffect(() => {
     fetchAllRecipes();
     fetchAllFolders();
+    fetchAllIngredients(); // Fetch all ingredients initially to enable local filtering
   }, []);
 
   useEffect(() => {
@@ -99,7 +111,6 @@ export function RecipeManager({
     });
     setFolders(defaultFolders);
 
-    // localStorage.setItem('recipeFolders', JSON.stringify(defaultFolders));
   };
 
 
@@ -163,58 +174,120 @@ export function RecipeManager({
     deleteFolder(folderToDelete.id);
   };
 
-  const handleSelectPantryItem = (item: any) => {
-    setCurrentIngredient({
-      id: item.id,  // Fixed: use item.id instead of item.ingredient_id (assuming PantryItem has id)
-      name: item.name,
-      quantity: 1,
-      unit: item.unit
-    });
-  };
-
-  const handleAddIngredient = () => {
-    if (!currentIngredient.name) return;
+  const handleSelectIngredient = (pantryItem: any, index: number) => {
     if (isEditing && selectedRecipe) {
-      const updatedIngredients = [...selectedRecipe.ingredients, currentIngredient];
-      setSelectedRecipe({ ...selectedRecipe, ingredients: updatedIngredients });
+      const updatedItems = [...selectedRecipe.ingredients];
+      updatedItems[index] = {
+        ...updatedItems[index],
+        name: pantryItem.name,
+        unit: pantryItem.default_unit
+      };
+      setSelectedRecipe({
+        ...selectedRecipe,
+        ingredients: updatedItems
+      });
     } else {
-      const updatedIngredients = [...newRecipe.ingredients, currentIngredient];
-      setNewRecipe({ ...newRecipe, ingredients: updatedIngredients });
+      const updatedItems = [...newRecipe.ingredients];
+      updatedItems[index] = {
+        ...updatedItems[index],
+        name: pantryItem.name,
+        unit: pantryItem.default_unit
+      };
+      setNewRecipe({
+        ...newRecipe,
+        ingredients: updatedItems
+      });
     }
-    setNewRecipeError('');
-    setCurrentIngredient({
-      id: currentIngredient.id,
-      name: '',
-      quantity: 1,
-      unit: ''
-    });
-    setShowIngredientSelector(false);
+    setShowIngredientDropdown(false);
+    setActiveItemIndex(null);
+    setItemSearchQuery('');
   };
 
-  const handleRemoveIngredient = (index: number) => {
-    const updatedIngredients = newRecipe.ingredients.filter((_, i) => i !== index);
-    setNewRecipe({ ...newRecipe, ingredients: updatedIngredients });
-  };
 
   // Handle image upload
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = event => {
-        if (isEditing && selectedRecipe) {
-          setSelectedRecipe({
-            ...selectedRecipe,
-            image: event.target?.result as string
-          });
-        } else {
-          setNewRecipe({
-            ...newRecipe,
-            image: event.target?.result as string
-          });
-        }
+    if (!file) return;
+
+    try {
+      const compressed = await compressImage(file);
+
+      const res = await ImageUploadApi.upload(compressed);
+
+      if (!res.success || !res.data) {
+        console.error("Upload failed", res.message);
+        return;
+      }
+
+      const image_url = res.data.image_url; // Cloudinary URL
+
+      if (isEditing && selectedRecipe) {
+        setSelectedRecipe({
+          ...selectedRecipe,
+          image: {
+            url: image_url,
+            public_id: res.data.public_id,
+          }
+        });
+      } else {
+        setNewRecipe({
+          ...newRecipe,
+          image: {
+            url: image_url,
+            public_id: res.data.public_id,
+          }
+        });
+      }
+    } catch (err) {
+      console.error("Image upload error:", err);
+    }
+  };
+
+  // Update Recipe item
+  const handleUpdateRecipeItem = (index: number, field: string, value: any) => {
+    if (isEditing && selectedRecipe) {
+      const updatedItems = [...selectedRecipe.ingredients];
+      updatedItems[index] = {
+        ...updatedItems[index],
+        [field]: field === 'price' || field === 'quantity' ? parseFloat(value) || 0 : value
       };
-      reader.readAsDataURL(file);
+      setSelectedRecipe({
+        ...selectedRecipe,
+        ingredients: updatedItems,
+      });
+    } else {
+      const updatedItems = [...newRecipe.ingredients];
+      updatedItems[index] = {
+        ...updatedItems[index],
+        [field]: field === 'quantity' ? parseFloat(value) || 0 : value
+      };
+      setNewRecipe({
+        ...newRecipe,
+        ingredients: updatedItems,
+      });
+    }
+  };
+
+  // Add a new item to the Recipe
+  const handleAddRecipeItem = () => {
+    if (isEditing && selectedRecipe) {
+      setSelectedRecipe({
+        ...selectedRecipe,
+        ingredients: [...selectedRecipe.ingredients, {
+          name: '',
+          quantity: 1,
+          unit: ''
+        }]
+      });
+    } else {
+      setNewRecipe({
+        ...newRecipe,
+        ingredients: [...newRecipe.ingredients, {
+          name: '',
+          quantity: 1,
+          unit: ''
+        }]
+      });
     }
   };
 
@@ -239,13 +312,17 @@ export function RecipeManager({
   // Save recipe
   const handleSaveRecipe = () => {
     if (isEditing && selectedRecipe) {
+      if (selectedRecipe.ingredients.some(ingredient => !ingredient.name.trim())) {
+        setNewRecipeError('Ingredient names cannot be empty.');
+        return;
+      }
       updateRecipe(selectedRecipe);
       setRecipes(prev => prev.map(r => r.id === selectedRecipe.id ? selectedRecipe : r));
       setSelectedRecipe(null);
       setIsEditing(false);
     } else {
-      if (newRecipe.ingredients.length === 0) {
-        setNewRecipeError('Please add at least one ingredient.');
+      if (newRecipe.ingredients.some(ingredient => !ingredient.name.trim())) {
+        setNewRecipeError('Ingredient names cannot be empty.');
         return;
       }
       // Skip pantry availability validation per request
@@ -259,7 +336,10 @@ export function RecipeManager({
         id: '',
         meal_name: '',
         ingredients: [],
-        image: null,
+        image: {
+          url: '',
+          public_id: '',
+        },
         folder_id: currentFolder ? currentFolder.id : 'uncategorized',
         instructions: [] as string[],
       });
@@ -273,13 +353,19 @@ export function RecipeManager({
     deleteRecipe(recipeId);
   };
 
+  const getFilteredPantryItems = (query: string) => {
+    // Removed fetchAllIngredients call to prevent infinite loop; filter locally after initial fetch
+    if (!query.trim()) return ingredients.slice(0, 10); // Show first 10 if no query
+    return ingredients.filter(item => item.name.toLowerCase().includes(query.toLowerCase()));
+  };
+
   // Add items from recipe to pantry
   const handleAddItemsToPantry = (ingredients: IngredientEntry[]) => {
     // Determine which items already exist and should be updated vs created
-    const nameToExisting = new Map(pantryItems.map(p => [p.name.toLowerCase(), p]));
+    const nameToExisting = new Map(ingredients.map(p => [p.name.toLowerCase(), p]));
 
-    const itemsToUpdate = [] as typeof pantryItems;
-    const itemsToCreate = [] as Array<Omit<typeof pantryItems[number], 'id'>>;
+    const itemsToUpdate = [] as typeof ingredients;
+    const itemsToCreate = [] as Array<Omit<typeof ingredients[number], 'id'>>;
 
     ingredients.forEach(item => {
       const key = item.name.toLowerCase();
@@ -287,26 +373,15 @@ export function RecipeManager({
       if (existing) {
         itemsToUpdate.push({
           ...existing,
-          quantity: existing.quantity + item.quantity
         });
       } else if (item.name.trim()) {
         itemsToCreate.push({
           name: item.name,
-          quantity: item.quantity,
-          unit: item.unit
+          default_unit: item.default_unit || '',
         });
       }
     });
-
-    if (itemsToUpdate.length > 0) {
-      updatePantryItems(itemsToUpdate);
-    }
-    if (itemsToCreate.length > 0) {
-      itemsToCreate.forEach(newItem => addPantryItem(newItem));
-    }
   };
-
-  const filteredPantryItems = pantryItems.filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
 
   // Handle starting to add a recipe from a folder
@@ -530,43 +605,64 @@ export function RecipeManager({
                         <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                       </label>
                     </div> : <div className="relative rounded-xl overflow-hidden h-40">
-                      <img src={selectedRecipe.image} alt="Meal" className="w-full h-full object-cover" />
+                      <img src={selectedRecipe.image.url} alt="Meal" className="w-full h-full object-cover" />
                       <button onClick={() => setSelectedRecipe({
                         ...selectedRecipe,
-                        image: null
+                        image: {
+                          url: '',
+                          public_id: '',
+                        }
                       })} className="absolute top-2 right-2 bg-white/80 p-1 rounded-full hover:bg-white text-red-500" aria-label="Remove image">
                         <XIcon size={20} />
                       </button>
                     </div>}
                   </div>
-                  {/* Ingredients Section (match add form) */}
+                  {/* Items List */}
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <label className="block text-gray-700">Ingredients Used</label>
-                      <button onClick={() => setShowIngredientSelector(true)} className="text-sm flex items-center text-red-600 hover:text-red-700">
+                      <label className="block text-gray-700 text-sm font-medium">
+                        {selectedRecipe ? 'Ingredients' : 'Items'}
+                      </label>
+                      <button onClick={handleAddRecipeItem} className="text-sm flex items-center text-red-600 hover:text-red-700">
                         <PlusIcon size={16} className="mr-1" />
-                        Add Ingredient
+                        Add {selectedRecipe ? 'Ingredient' : 'Item'}
                       </button>
                     </div>
-                    {selectedRecipe.ingredients.length === 0 ? (
-                      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center text-gray-500">
-                        No ingredients added yet
-                      </div>
-                    ) : (
-                      <ul className="bg-gray-50 border border-gray-200 rounded-xl divide-y divide-gray-200">
-                        {selectedRecipe.ingredients.map((ingredient, index) => (
-                          <li key={index} className="flex justify-between items-center p-3">
-                            <div>
-                              <p className="font-medium text-gray-800">{ingredient.name}</p>
-                              <p className="text-sm text-gray-500">{ingredient.quantity} {ingredient.unit}</p>
+                    {selectedRecipe.ingredients.map((item: any, index: number) => <div key={index} className="flex gap-1.5 items-center mb-2">
+                      <div className="flex-1 min-w-0 relative" ref={activeItemIndex === index ? ingredientDropdownRef : null}>
+                        <div className="relative">
+                          <input type="text" value={item.name} onChange={e => {
+                            handleUpdateRecipeItem(index, 'name', e.target.value);
+                            setItemSearchQuery(e.target.value);
+                            setActiveItemIndex(index);
+                            setShowIngredientDropdown(true);
+                          }} onFocus={() => {
+                            setActiveItemIndex(index);
+                            setShowIngredientDropdown(true);
+                            setItemSearchQuery(item.name);
+                          }} placeholder={selectedRecipe ? 'Search ingredient...' : 'Search item...'} className="w-full p-2 pr-8 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" />
+                          <SearchIcon size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        </div>
+
+                        {/* Dropdown Menu */}
+                        {showIngredientDropdown && activeItemIndex === index && <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                          {getFilteredPantryItems(itemSearchQuery).length > 0 ? getFilteredPantryItems(itemSearchQuery).map(pantryItem => <button key={pantryItem.name} type="button" onClick={() => handleSelectIngredient(pantryItem, index)} className="w-full text-left px-3 py-2 hover:bg-red-50 transition-colors text-sm border-b border-gray-100 last:border-b-0">
+                            <div className="font-medium text-gray-800 capitalize">
+                              {pantryItem.name}
                             </div>
-                            <button onClick={() => handleRemoveRecipeItem(index)} className="p-1 rounded-full hover:bg-red-50 text-red-500">
-                              <TrashIcon size={16} />
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                            <div className="text-xs text-gray-500">
+                              {pantryItem.default_unit}
+                            </div>
+                          </button>) : <div></div>}
+                        </div>}
+                      </div>
+
+                      <input type="number" min="1" value={item.quantity} onChange={e => handleUpdateRecipeItem(index, 'quantity', e.target.value)} className="w-16 p-2 border border-gray-200 rounded-lg" />
+                      <input type="text" value={item.unit} onChange={e => handleUpdateRecipeItem(index, 'unit', e.target.value)} placeholder="Unit" className="w-16 p-2 border border-gray-200 rounded-lg" />
+                      <button onClick={() => handleRemoveRecipeItem(index)} className="p-1 rounded-full hover:bg-red-50 text-red-500">
+                        <TrashIcon size={16} />
+                      </button>
+                    </div>)}
                   </div>
                   <div className="flex gap-2 pt-4">
                     <button onClick={() => {
@@ -591,7 +687,7 @@ export function RecipeManager({
                     </div>
                   </div>
                   {selectedRecipe.image && <div className="rounded-xl overflow-hidden h-40 my-4">
-                    <img src={selectedRecipe.image} alt="Meal" className="w-full h-full object-cover" />
+                    <img src={selectedRecipe.image.url} alt="Meal" className="w-full h-full object-cover" />
                   </div>}
                   <div className="border-t border-b border-gray-100 py-4">
                     <h4 className="font-medium text-gray-700 mb-2">
@@ -619,8 +715,7 @@ export function RecipeManager({
                           selectedRecipe.ingredients.map((ingredient, idx) => ({
                             id: `ingredient-${idx}-${Date.now()}`,
                             name: ingredient.name,
-                            quantity: ingredient.quantity,
-                            unit: ingredient.unit
+                            default_unit: ingredient.unit || '',
                           }))
                         )
                       }
@@ -652,52 +747,71 @@ export function RecipeManager({
                 {/* Image Upload Section */}
                 <div>
                   <label className="block text-gray-700 mb-2">
-                    Meal Photo (optional)
+                    Recipe Image (optional)
                   </label>
                   {!newRecipe.image ? <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center">
                     <ImageIcon size={32} className="mx-auto text-gray-400 mb-2" />
-                    <p className="text-gray-500 mb-2">Add a photo of your meal</p>
+                    <p className="text-gray-500 mb-2">Add a photo of your Recipe</p>
                     <label className="cursor-pointer bg-gray-50 hover:bg-gray-100 text-gray-700 py-2 px-4 rounded-lg border border-gray-200 inline-block transition-colors">
                       Upload Image
                       <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                     </label>
                   </div> : <div className="relative rounded-xl overflow-hidden">
-                    <img src={newRecipe.image} alt="Meal" className="w-full h-48 object-cover" />
-                    <button onClick={() => setNewRecipe({ ...newRecipe, image: null })} className="absolute top-2 right-2 bg-white/80 p-1 rounded-full hover:bg-white text-red-500" aria-label="Remove image">
+                    <img src={newRecipe.image.url} alt="Meal" className="w-full h-48 object-cover" />
+                    <button onClick={() => setNewRecipe({ ...newRecipe, image: { url: '', public_id: '' } })} className="absolute top-2 right-2 bg-white/80 p-1 rounded-full hover:bg-white text-red-500" aria-label="Remove image">
                       <XIcon size={20} />
                     </button>
                   </div>}
                 </div>
-
-                {/* Ingredients Section */}
+                {/* Items List */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <label className="block text-gray-700">Ingredients Used</label>
-                    <button onClick={() => setShowIngredientSelector(true)} className="text-sm flex items-center text-red-600 hover:text-red-700">
+                    <label className="block text-gray-700 text-sm font-medium">
+                      Items
+                    </label>
+                    <button onClick={handleAddRecipeItem} className="text-sm flex items-center text-red-600 hover:text-red-700">
                       <PlusIcon size={16} className="mr-1" />
-                      Add Ingredient
+                      Add Item
                     </button>
                   </div>
-
-                  {newRecipe.ingredients.length === 0 ? <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center text-gray-500">
-                    No ingredients added yet
-                  </div> : <ul className="bg-gray-50 border border-gray-200 rounded-xl divide-y divide-gray-200">
-                    {newRecipe.ingredients.map((ingredient, index) => <li key={index} className="flex justify-between items-center p-3">
-                      <div>
-                        <p className="font-medium text-gray-800">
-                          {ingredient.name}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {ingredient.quantity} {ingredient.unit}
-                        </p>
+                  {newRecipe.ingredients.map((item, index) => <div key={index} className="flex gap-2 items-center mb-2">
+                    {/* Searchable Ingredient Input */}
+                    <div className="flex-1 min-w-0 relative" ref={activeItemIndex === index ? ingredientDropdownRef : null}>
+                      <div className="relative">
+                        <input type="text" value={item.name} onChange={e => {
+                          handleUpdateRecipeItem(index, 'name', e.target.value);
+                          setItemSearchQuery(e.target.value);
+                          setActiveItemIndex(index);
+                          setShowIngredientDropdown(true);
+                        }} onFocus={() => {
+                          setActiveItemIndex(index);
+                          setShowIngredientDropdown(true);
+                          setItemSearchQuery(item.name);
+                        }} placeholder="Search item..." className="w-full p-2 pr-8 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" />
+                        <SearchIcon size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                       </div>
-                      <button onClick={() => handleRemoveIngredient(index)} className="p-1 rounded-full hover:bg-red-50 text-red-500">
-                        <TrashIcon size={16} />
-                      </button>
-                    </li>)}
-                  </ul>}
-                </div>
 
+                      {/* Dropdown Menu */}
+                      {showIngredientDropdown && activeItemIndex === index && <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {getFilteredPantryItems(itemSearchQuery).length > 0 ? getFilteredPantryItems(itemSearchQuery).map(pantryItem => <button key={pantryItem.name} type="button" onClick={() => handleSelectIngredient(pantryItem, index)} className="w-full text-left px-3 py-2 hover:bg-red-50 transition-colors text-sm border-b border-gray-100 last:border-b-0">
+                          <div className="font-medium text-gray-800 capitalize">
+                            {pantryItem.name}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {pantryItem.default_unit}{' '}
+                          </div>
+                        </button>) : <div></div>}
+                      </div>}
+                    </div>
+
+                    <input type="number" min="1" value={item.quantity} onChange={e => handleUpdateRecipeItem(index, 'quantity', e.target.value)} className="w-14 p-2 text-sm border border-gray-200 rounded-lg" />
+                    <input type="text" value={item.unit} onChange={e => handleUpdateRecipeItem(index, 'unit', e.target.value)} placeholder="Unit" className="w-14 p-2 text-sm border border-gray-200 rounded-lg" />
+                    <button onClick={() => handleRemoveRecipeItem(index)} className="p-1 rounded-full hover:bg-red-50 text-red-500" aria-label={`Remove ${item.name || 'item'}`}>
+                      <TrashIcon size={16} />
+                      <span className="sr-only">Remove {item.name || 'item'}</span>
+                    </button>
+                  </div>)}
+                </div>
                 {newRecipeError && <p className="text-red-500 text-sm mb-2">{newRecipeError}</p>}
                 <button onClick={handleSaveRecipe} disabled={!newRecipe.meal_name.trim() || newRecipe.ingredients.length === 0} className={`w-full py-3 px-4 rounded-xl font-medium ${newRecipe.meal_name.trim() && newRecipe.ingredients.length > 0 ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} transition-colors`}>
                   Log This Meal
@@ -706,69 +820,6 @@ export function RecipeManager({
             </div>
           </div>}
       </main>
-      {/* Ingredient Selector Modal */}
-      {showIngredientSelector && <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-xl shadow-lg max-w-md w-full max-h-[90vh] overflow-hidden">
-          <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-            <h3 className="font-medium text-gray-800">Add Ingredient</h3>
-            <button onClick={() => setShowIngredientSelector(false)} className="p-1 rounded-full hover:bg-gray-100">
-              <XIcon size={20} className="text-gray-500" />
-            </button>
-          </div>
-
-          <div className="p-4">
-            {/* Search Bar */}
-            <div className="relative mb-4">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <SearchIcon size={16} className="text-gray-400" />
-              </div>
-              <input type="text" placeholder="Search pantry items..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" />
-            </div>
-
-            {/* Pantry Items List */}
-            <div className="max-h-60 overflow-y-auto mb-4">
-              {filteredPantryItems.length > 0 ? <ul className="divide-y divide-gray-100">
-                {/* Fixed: Changed key from item.name to item.id to avoid duplicates */}
-                {filteredPantryItems.map(item => <li key={item.id} onClick={() => handleSelectPantryItem(item)} className={`p-3 cursor-pointer hover:bg-gray-50 rounded ${currentIngredient.name === item.name ? 'bg-red-50' : ''}`}>
-                  <p className="font-medium">{item.name}</p>
-                  <p className="text-sm text-gray-500">
-                    Available: {item.quantity} {item.unit}
-                  </p>
-                </li>)}
-              </ul> : <p className="text-center py-4 text-gray-500">
-                No items found
-              </p>}
-            </div>
-
-            {/* Quantity Input */}
-            {currentIngredient.name && <div className="mb-4">
-              <label className="block text-sm text-gray-700 mb-1">
-                How much {currentIngredient.name} you use?
-              </label>
-              <div className="flex gap-2">
-                {/* use NumberInput */}
-                <NumberInput min={0.1} step={0.5} value={currentIngredient.quantity} onChange={value => setCurrentIngredient({
-                  ...currentIngredient,
-                  quantity: value
-                })} className="w-1/3 p-2 rounded-lg" />
-                <input type="text" placeholder="Unit (g, ml, etc.)" value={currentIngredient.unit} onChange={e => setCurrentIngredient({
-                  ...currentIngredient,
-                  unit: e.target.value
-                })} className="w-2/3 p-2 border border-gray-200 rounded-lg" />
-              </div>
-            </div>}
-
-            <div className="flex gap-2">
-              <button onClick={() => setShowIngredientSelector(false)} className="w-1/2 bg-gray-100 text-gray-700 py-2 rounded-lg">
-                Cancel
-              </button>
-              <button onClick={handleAddIngredient} disabled={!currentIngredient.name} className={`w-1/2 ${currentIngredient.name ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} py-2 rounded-lg`}>
-                Add Ingredient
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>}
       {/* Add Folder Modal */}
       {showAddFolder && <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div className="bg-white rounded-xl shadow-lg max-w-sm w-full">

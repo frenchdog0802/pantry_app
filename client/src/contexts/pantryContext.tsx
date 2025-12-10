@@ -34,6 +34,7 @@ interface PantryContextType {
   // ingredients
   fetchAllIngredients: (query: string | null) => void;
   ingredients: IngredientEntry[];
+  updateIngredients?: (item: IngredientEntry) => void;
 
   // shopping List
   shoppingList: ShoppingListItem[];
@@ -48,6 +49,8 @@ interface PantryContextType {
   addMealPlan: (mealPlan: MealPlan) => void;
   updateMealPlan: (mealPlan: MealPlan) => void;
   deleteMealPlan: (id: string) => void;
+
+
 }
 
 const PantryContext = createContext<PantryContextType | undefined>(undefined);
@@ -158,7 +161,18 @@ export function PantryProvider({
     }
   };
   const updateRecipe = (recipe: Recipe) => {
+    // optimistic update
     setRecipes(prev => prev.map(r => r.id === recipe.id ? recipe : r));
+
+    (async () => {
+      try {
+        await recipeApi.update(recipe.id, recipe);
+      } catch (err) {
+        console.error('Update recipe failed:', err);
+        // rollback by re-fetching recipes to restore consistent state
+        fetchAllRecipes();
+      }
+    })();
   };
   const deleteRecipe = (id: string) => {
     setRecipes(prev => prev.filter(r => r.id !== id));
@@ -229,6 +243,10 @@ export function PantryProvider({
     } catch (err) {
       console.error('Fetch ingredients failed:', err);
     }
+  };
+  const updateIngredients = (item: IngredientEntry) => {
+    setIngredients(prev => prev.map(i => i.id === item.id ? item : i));
+    ingredientApi.update(item.id, item);
   };
 
   // shopping list item functions
@@ -331,12 +349,14 @@ export function PantryProvider({
     mealPlanApi.delete(id);
   };
 
+
   const queryPantryData = () => {
     fetchAllFolders();
     fetchAllRecipes();
     fetchAllPantryItems();
     fetchAllShoppingListItems();
     fetchAllMealPlans();
+    fetchAllIngredients(null);
   };
 
 
@@ -372,7 +392,8 @@ export function PantryProvider({
     fetchAllMealPlans,
     addMealPlan,
     updateMealPlan,
-    deleteMealPlan
+    deleteMealPlan,
+    updateIngredients
   }}>
     {children}
   </PantryContext.Provider>;

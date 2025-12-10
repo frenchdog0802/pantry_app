@@ -8,7 +8,10 @@ const config = {
     mongoUri: safeEnv('MONGODB_URI') || safeEnv('MONGO_HOST') || "mongodb+srv://x6815541_db_user:Qn4R71XqNTuyck5b@cluster0.xefsthx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0" ||
         'mongodb://' + (safeEnv('IP') || 'localhost') + ':' +
         (safeEnv('MONGO_PORT') || '27017') +
-        '/mernproject'
+        '/mernproject',
+    cloudinarycloudName: safeEnv('CLOUDINARY_CLOUD_NAME') || 'ddtjd5tbg',
+    cloudinaryApiKey: safeEnv('CLOUDINARY_API_KEY') || '862352563776518',
+    cloudinaryApiSecret: safeEnv('CLOUDINARY_API_SECRET') || 'cqdZDMRF_kUoPkVKnmPUe08hYCk',
 }
 
 if (config.env === 'production' && (!config.jwtSecret || !config.mongoUri)) {

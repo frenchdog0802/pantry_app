@@ -24,8 +24,8 @@ export interface UserSettings {
 export interface IngredientEntry {
     id: string;
     name: string;
-    quantity: number;
-    unit: string;
+    default_unit: string;
+    image_url?: number;
 }
 
 export interface Folder {
@@ -44,7 +44,10 @@ export interface Recipe {
         quantity: number;
         unit: string;
     }[];
-    image?: string | null;
+    image: {
+        public_id: string;
+        url: string;
+    }
 }
 
 export type ShoppingListItem = {
@@ -60,6 +63,8 @@ export interface PantryItem {
     id: string;
     name: string;
     quantity: number;
+    item_planned?: number;
+    item_to_buy?: number;
     unit: string;
 }
 

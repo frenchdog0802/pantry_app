@@ -7,7 +7,10 @@ const RecipeSchema = new mongoose.Schema(
         meal_name: { type: String, required: true },
         description: { type: String },
         steps: [{ type: String }], // can later be changed to ObjectId refs
-        image_url: { type: String },
+        image: {
+            url: { type: String },
+            public_id: { type: String },
+        },
         createdAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
         updatedAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
     },

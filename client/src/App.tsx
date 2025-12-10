@@ -29,41 +29,16 @@ function AppContent() {
     // const location = useLocation();
     if (!loading && !isAuthenticated) {
       setCurrentView('login');
-    } else {
-      // console.log("Location pathname:", location.pathname);
-      // const path = location.pathname;
-      // let view = 'home'; // default
-      // let activeTabParam = '';
-
-      // if (path === '/calendar') {
-      //   view = 'calendar';
-      // } else if (path.startsWith('/pantry')) {
-      //   view = 'pantryManager';
-      //   const tabMatch = path.match(/^\/pantry\/(.+)$/);
-      //   if (tabMatch) {
-      //     activeTabParam = tabMatch[1];
-      //   }
-      // } else if (path === '/recipe') {
-      //   view = 'recipeManager';
-      // } else if (path === '/settings') {
-      //   view = 'settings';
-      // } else if (path === '/ai') {
-      //   view = 'aiAssistant';
-      // } else if (path === '/signup') {
-      //   view = 'signup';
-      // } else if (path === '/login') {
-      //   view = 'login';
-      // }
-
-      // setCurrentView(view);
-      // if (activeTabParam) {
-      //   setViewData({ activeTabParam });
-      // }
     }
   }, [isAuthenticated, loading]);
 
-  const handleNavigate = (view: string) => {
+  const handleNavigate = (view: string, activeTabParam: string = '') => {
     setCurrentView(view);
+    if (view === 'pantryManager') {
+      setViewData({ activeTabParam });
+    } else {
+      setViewData(null);
+    }
   };
 
   const navigateToSignUp = () => {
@@ -72,10 +47,7 @@ function AppContent() {
   const navigateToLogin = () => {
     setCurrentView('login');
   }
-  const navigateToRecipeDetail = (recipe: any) => {
-    setSelectedRecipe(recipe);
-    setCurrentView('recipeDetail');
-  };
+
   const navigateToHome = () => {
     setCurrentView('home');
   };
@@ -111,7 +83,7 @@ function AppContent() {
     {currentView === 'settings' && isAuthenticated && <Settings onBack={navigateToHome} />}
     {currentView === 'signup' && <SignUp onSignUpSuccess={navigateToHome} onLogin={navigateToLogin} />}
     {currentView !== 'login' && currentView !== 'signup' && (
-      <BottomNav activeView={currentView} onNavigate={handleNavigate} />
+      <BottomNav activeView={currentView} onNavigate={handleNavigate} activeTabParam={viewData?.activeTabParam} />
     )}
   </div>;
 }

@@ -1,9 +1,11 @@
 import PantryItem from "../models/pantryItem.model.js";
 import Ingredient from "../models/ingredient.model.js";
 import { successResponse, errorResponse } from "../utils/apiResponse.js";
-import e from "express";
-// Insert all
+import ShoppingListItem from "../models/shoppingList.model.js";
+import MealPlan from "../models/mealPlan.model.js";
+import RecipeIngredient from "../models/recipeIngredient.model.js";
 
+// Insert all
 export const insertAllPantryItems = async (req, res) => {
     try {
         const items = req.body;
@@ -102,14 +104,25 @@ export const getAllPantryItems = async (req, res) => {
     try {
         const userId = req.auth.user_id;
         const pantryItems = await PantryItem.find({ user_id: userId });
+        // find item to buy from shopping list 
+        const shoppingListItems = await ShoppingListItem.find({ user_id: userId });
+        // find planned meals from meal plan serving_date greater than today 
+        const today = new Date().toISOString().split('T')[0];
+        const mealPlans = await MealPlan.find({ user_id: userId, serving_date: { $gte: today } });
+        // find recipe ingredients from meal plans
+        const recipeIngredients = await RecipeIngredient.find({ recipe_id: { $in: mealPlans.map(mp => mp.recipe_id) } });
         // find name from ingredient model
         const itemsWithNames = await Promise.all(pantryItems.map(async (item) => {
             const ingredient = await Ingredient.findById(item.ingredient_id);
+            const itemToBuy = shoppingListItems.find(sItem => sItem.ingredient_id === item.ingredient_id);
+            const itemPlanned = recipeIngredients.find(rIngredient => rIngredient.ingredient_id === item.ingredient_id);
             return {
                 id: item._id.toString(),
                 user_id: item.user_id,
                 ingredient_id: item.ingredient_id,
                 quantity: item.quantity,
+                item_to_buy: itemToBuy ? itemToBuy.quantity : 0,
+                item_planned: itemPlanned ? itemPlanned.quantity : 0,
                 name: ingredient ? ingredient.name : "Unknown",
                 unit: ingredient ? item.unit : ingredient.default_unit
             };

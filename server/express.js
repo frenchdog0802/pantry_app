@@ -13,6 +13,7 @@ import ingredientRoute from "./routes/ingredient.route.js";
 import pantryItemRoute from "./routes/pantryItem.route.js";
 import shoppingListRoute from "./routes/shoppingList.route.js";
 import mealPlanRoute from "./routes/mealPlan.route.js";
+import uploadRoute from "./routes/upload.route.js";
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use("/api/ingredient", ingredientRoute);
 app.use("/api/pantry-item", pantryItemRoute);
 app.use("/api/shopping-list", shoppingListRoute);
 app.use("/api/meal-plan", mealPlanRoute);
+app.use("/api/upload", uploadRoute);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
