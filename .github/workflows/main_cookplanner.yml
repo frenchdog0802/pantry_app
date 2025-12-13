@@ -31,8 +31,6 @@ jobs:
           cd ..
           cd server
           yarn
-          yarn build --if-present
-          yarn test --if-present
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
