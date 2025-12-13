@@ -21,7 +21,7 @@ const CURRENT_WORKING_DIR = process.cwd();
 app.use(cors({
   origin: 'http://localhost:5173',  // Allow frontend to access from this domain
 }));
-app.use(express.static(path.join(CURRENT_WORKING_DIR, "dist/app")));
+app.use(express.static(path.join(CURRENT_WORKING_DIR, "client/dist/app")));//for test environment 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth", authRoutes);
