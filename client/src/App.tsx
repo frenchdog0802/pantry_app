@@ -26,6 +26,10 @@ function AppContent() {
   } = useAuth();
   // Reset to login view if not authenticated
   useEffect(() => {
+    console.log(
+      "Google Client ID:",
+      import.meta.env.VITE_GOOGLE_CLIENT_ID
+    );
     // const location = useLocation();
     if (!loading && !isAuthenticated) {
       setCurrentView('login');
