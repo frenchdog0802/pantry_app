@@ -25,9 +25,6 @@ jobs:
 
       - name: npm install, build, and test
         run: |
-          cd client
-          yarn
-          yarn build
           cd ..
           cd server
           yarn
