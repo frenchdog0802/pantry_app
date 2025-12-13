@@ -17,9 +17,23 @@ import uploadRoute from "./routes/upload.route.js";
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://icy-meadow-0cd8a0c0f.3.azurestaticapps.net"
+];
+
 const CURRENT_WORKING_DIR = process.cwd();
 app.use(cors({
-  origin: 'http://localhost:5173',  // Allow frontend to access from this domain
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true
 }));
 app.use(express.static(path.join(CURRENT_WORKING_DIR, "client/dist/app")));//for test environment 
 app.use(express.json());
