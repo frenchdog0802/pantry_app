@@ -1,6 +1,6 @@
 import express from "express";
-import shoppingListCtrl from "../controllers/shoppingList.controller.js";
-import auth from "../controllers/auth.controller.js";
+import shoppingListCtrl from "../services/shoppingList.service.js";
+import auth from "../services/auth.service.js";
 const router = express.Router();
 router.post('/bulk', auth.requireSignin, shoppingListCtrl.insertAllShoppingListItems);
 router.get('/', auth.requireSignin, shoppingListCtrl.getAllShoppingListItems);

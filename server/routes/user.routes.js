@@ -1,6 +1,6 @@
 import express from "express";
-import userCtrl from "../controllers/user.controller.js";
-import authCtrl from "../controllers/auth.controller.js";
+import userCtrl from "../services/user.service.js";
+import authCtrl from "../services/auth.service.js";
 const router = express.Router();
 router.route("/").post(userCtrl.create);
 router.route("/").get(userCtrl.list);

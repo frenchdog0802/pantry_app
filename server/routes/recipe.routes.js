@@ -1,6 +1,6 @@
 import express from "express";
-import recipeCtrl from "../controllers/recipe.controller.js";
-import auth from "../controllers/auth.controller.js";
+import recipeCtrl from "../services/recipe.service.js";
+import auth from "../services/auth.service.js";
 const router = express.Router();
 
 router.get('/', auth.requireSignin, recipeCtrl.getAllRecipes);

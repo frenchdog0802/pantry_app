@@ -1,6 +1,6 @@
 import express from "express";
-import ingredientCtrl from "../controllers/ingredient.controller.js";
-import auth from "../controllers/auth.controller.js";
+import ingredientCtrl from "../services/ingredient.service.js";
+import auth from "../services/auth.service.js";
 
 const router = express.Router();
 router.post('/bulk', auth.requireSignin, ingredientCtrl.insertAllIngredients);
