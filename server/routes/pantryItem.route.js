@@ -1,6 +1,6 @@
 import express from "express";
-import pantryItemCtrl from "../controllers/pantryItem.controller.js";
-import auth from "../controllers/auth.controller.js";
+import pantryItemCtrl from "../services/pantryItem.service.js";
+import auth from "../services/auth.service.js";
 
 const router = express.Router();
 router.post('/bulk', auth.requireSignin, pantryItemCtrl.insertAllPantryItems);

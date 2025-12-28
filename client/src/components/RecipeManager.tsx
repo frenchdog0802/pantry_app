@@ -18,8 +18,6 @@ export function RecipeManager({
     addRecipe,
     updateRecipe,
     deleteRecipe,
-    updatePantryItems,
-    addPantryItem,
     fetchAllRecipes,
     fetchAllFolders,
     addFolder,
@@ -63,7 +61,7 @@ export function RecipeManager({
   useEffect(() => {
     fetchAllRecipes();
     fetchAllFolders();
-    fetchAllIngredients(); // Fetch all ingredients initially to enable local filtering
+    fetchAllIngredients(null); // Fetch all ingredients initially to enable local filtering
   }, []);
 
   useEffect(() => {

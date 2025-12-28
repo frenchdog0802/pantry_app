@@ -1,6 +1,6 @@
 import express from "express";
-import mealPlanCtrl from "../controllers/mealPlan.controller.js";
-import auth from "../controllers/auth.controller.js";
+import mealPlanCtrl from "../services/mealPlan.service.js";
+import auth from "../services/auth.service.js";
 const router = express.Router();
 // router.post('/bulk', mealPlanCtrl.insertAllMealPlans);
 router.get('/', auth.requireSignin, mealPlanCtrl.getAllMealPlans);

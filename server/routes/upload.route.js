@@ -1,6 +1,6 @@
 import express from "express";
-import cloudinaryCtrl from "../controllers/cloudinary.controller.js";
-import auth from "../controllers/auth.controller.js";
+import cloudinaryCtrl from "../services/cloudinary.service.js";
+import auth from "../services/auth.service.js";
 const router = express.Router();
 
 router.post('/image', auth.requireSignin, cloudinaryCtrl.uploadImage);

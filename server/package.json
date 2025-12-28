@@ -32,8 +32,10 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "express-jwt": "^8.5.1",
+    "express-rate-limit": "^8.2.1",
     "global": "^4.4.0",
     "google-auth-library": "^10.4.1",
     "helmet": "^8.1.0",
@@ -43,6 +45,7 @@
     "mongoose": "^8.16.4",
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",
-    "openai": "^6.10.0"
+    "openai": "^6.10.0",
+    "redis": "^5.10.0"
   }
 }

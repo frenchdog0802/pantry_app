@@ -18,7 +18,7 @@ export const getAllIngredients = async (req, res) => {
     try {
         const ingredients = await Ingredient.find(
             query ? { name: { $regex: query, $options: 'i' } } : {}
-        ).limit(10);
+        );
         res.json(successResponse(ingredients));
     } catch (err) {
         res.json(errorResponse({ message: err.message }));

@@ -76,3 +76,18 @@ export interface MealPlan {
     meal_name: string;
     image?: string | null;
 }
+
+export interface RecipeSuggestion {
+    id: string;
+    name: string;
+    ingredients: {
+        name: string;
+        quantity: number;
+        unit: string;
+    }[];
+    instructions: string[];
+    cookTime?: number;
+    difficulty?: string;
+    image?: string;
+    savedAt?: number;
+}

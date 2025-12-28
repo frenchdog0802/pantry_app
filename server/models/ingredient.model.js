@@ -20,18 +20,11 @@ IngredientSchema.set("toJSON", {
     },
 });
 
-// from Json to MongoDB
-IngredientSchema.set("fromJSON", {
-    transform: (_, ret) => {
-        ret._id = ret.id;
-        delete ret.id;
-    },
-});
 
 IngredientSchema.pre('save', function (next) {
     this.updatedAt = Math.floor(Date.now() / 1000);
     next();
 });
 
-const Ingredient = mongoose.model("Ingredient", IngredientSchema);
+const Ingredient = mongoose.models.Ingredient || mongoose.model("Ingredient", IngredientSchema);
 export default Ingredient;

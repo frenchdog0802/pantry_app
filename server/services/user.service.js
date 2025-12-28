@@ -1,6 +1,6 @@
 import User from "../models/user.model.js";
 import extend from "lodash/extend.js";
-import errorHandler from "./error.controller.js";
+import errorHandler from "./error.service.js";
 import { successResponse, errorResponse } from "../utils/apiResponse.js";
 const create = async (req, res) => {
   const user = new User(req.body);

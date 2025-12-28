@@ -1,5 +1,5 @@
 import express from "express";
-import authCtrl from "../controllers/auth.controller.js";
+import authCtrl from "../services/auth.service.js";
 const router = express.Router();
 router.route("/signup").post(authCtrl.signup);
 router.route("/signin").post(authCtrl.signin);

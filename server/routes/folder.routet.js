@@ -1,6 +1,6 @@
 import express from "express";
-import folderCtrl from "../controllers/folder.controller.js";
-import auth from "../controllers/auth.controller.js";
+import folderCtrl from "../services/folder.service.js";
+import auth from "../services/auth.service.js";
 
 const router = express.Router();
 

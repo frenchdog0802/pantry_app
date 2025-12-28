@@ -5,13 +5,12 @@ const config = {
     env: safeEnv('NODE_ENV') || 'development',
     port: safeEnv('PORT') || 3000,
     jwtSecret: safeEnv('JWT_SECRET') || "6fa72e20f64b00b6b8c2abf50fca10f11a9e3b8e3f9e056e8e251ad26b2bca8d7a3ce9f1a1df7ab4c1f7f14b9d6d1c9f5df9e6a3c98e7c1d",
-    mongoUri: safeEnv('MONGODB_URI') || safeEnv('MONGO_HOST') || "mongodb+srv://x6815541_db_user:Qn4R71XqNTuyck5b@cluster0.xefsthx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0" ||
-        'mongodb://' + (safeEnv('IP') || 'localhost') + ':' +
-        (safeEnv('MONGO_PORT') || '27017') +
-        '/mernproject',
+    mongoUri: safeEnv('MONGODB_URI') || "mongodb+srv://x6815541_db_user:Qn4R71XqNTuyck5b@cluster0.xefsthx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
     cloudinarycloudName: safeEnv('CLOUDINARY_CLOUD_NAME') || 'ddtjd5tbg',
     cloudinaryApiKey: safeEnv('CLOUDINARY_API_KEY') || '862352563776518',
     cloudinaryApiSecret: safeEnv('CLOUDINARY_API_SECRET') || 'cqdZDMRF_kUoPkVKnmPUe08hYCk',
+    openAIApiKey: safeEnv('OPENAI_API_KEY') || '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',
+    redisUrl: safeEnv('REDIS_URL') || 'redis://default:Vk6uzJqcIDSDjYP6uZlgDuQQ1hDXWo0H@redis-19969.c62.us-east-1-4.ec2.cloud.redislabs.com:19969',
 }
 
 if (config.env === 'production' && (!config.jwtSecret || !config.mongoUri)) {

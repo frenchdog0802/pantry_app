@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ArrowLeftIcon, CheckCircleIcon, ShoppingCartIcon } from 'lucide-react';
 import { usePantry } from '../contexts/pantryContext';
+import { IngredientEntry, Recipe } from '../api/types';
 interface RecipeDetailProps {
-  recipe: any;
+  recipe: Recipe;
   onBack: () => void;
 }
 export function RecipeDetail({
@@ -11,31 +12,12 @@ export function RecipeDetail({
 }: RecipeDetailProps) {
   const {
     pantryItems,
-    updatePantryItems,
-    addToCookingHistory
+    updatePantryItems
   } = usePantry();
   const [cooked, setCooked] = useState(false);
-  const handleCookNow = () => {
-    // Update pantry by decreasing used ingredients
-    const updatedPantry = pantryItems.map(item => {
-      const usedIngredient = recipe.ingredients.find(ing => ing.name.toLowerCase() === item.name.toLowerCase());
-      if (usedIngredient) {
-        return {
-          ...item,
-          quantity: Math.max(0, item.quantity - usedIngredient.quantity)
-        };
-      }
-      return item;
-    });
-    // Update pantry and add to cooking history
-    updatePantryItems(updatedPantry);
-    addToCookingHistory(recipe);
-    setCooked(true);
-  };
-  const checkIngredientAvailability = ingredient => {
+  const checkIngredientAvailability = (ingredient: IngredientEntry) => {
     const pantryItem = pantryItems.find(item => item.name.toLowerCase() === ingredient.name.toLowerCase());
     if (!pantryItem) return 'missing';
-    if (pantryItem.quantity < ingredient.quantity) return 'insufficient';
     return 'available';
   };
   return <div className="flex flex-col w-full min-h-screen bg-gray-50">
@@ -52,12 +34,12 @@ export function RecipeDetail({
       </header>
       {/* Recipe Image */}
       <div className="w-full h-64 relative">
-        <img src={recipe.image} alt={recipe.name} className="w-full h-full object-cover" />
+        <img src={recipe.image.url} alt={recipe.meal_name} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
         <div className="absolute bottom-0 left-0 right-0 p-6">
-          <h2 className="text-2xl font-bold text-white">{recipe.name}</h2>
+          <h2 className="text-2xl font-bold text-white">{recipe.meal_name}</h2>
           <p className="text-white/90">
-            {recipe.cookTime} mins • {recipe.difficulty}
+            {/* {recipe.cookTime} mins • {recipe.difficulty} */} 100 min • Medium
           </p>
         </div>
       </div>
@@ -76,9 +58,9 @@ export function RecipeDetail({
         <section className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <h3 className="text-xl font-bold text-gray-800 mb-4">Ingredients</h3>
           <ul className="space-y-3">
-            {recipe.ingredients.map((ingredient, index) => {
+            {recipe.ingredients.map((ingredient: any, index: number) => {
               const availability = checkIngredientAvailability(ingredient);
-              return <li key={index} className={`flex justify-between items-center p-3 rounded-lg ${availability === 'available' ? 'bg-red-50 border border-red-100' : availability === 'insufficient' ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50 border border-gray-100'}`}>
+              return <li key={index} className={`flex justify-between items-center p-3 rounded-lg ${availability === 'available' ? 'bg-red-50 border border-red-100' : 'bg-gray-50 border border-gray-100'}`}>
                 <span className="font-medium">
                   {ingredient.quantity} {ingredient.unit} {ingredient.name}
                 </span>
@@ -94,7 +76,7 @@ export function RecipeDetail({
         <section className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <h3 className="text-xl font-bold text-gray-800 mb-4">Instructions</h3>
           <ol className="space-y-5">
-            {recipe.instructions.map((step, index) => <li key={index} className="flex">
+            {recipe.instructions.map((step: any, index: number) => <li key={index} className="flex">
               <div className="bg-red-100 rounded-full w-8 h-8 flex items-center justify-center text-red-700 font-semibold mr-4 flex-shrink-0 mt-0.5">
                 {index + 1}
               </div>
@@ -102,27 +84,6 @@ export function RecipeDetail({
             </li>)}
           </ol>
         </section>
-        {/* Swap Suggestions */}
-        {recipe.swaps && recipe.swaps.length > 0 && <section className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">
-            Ingredient Swaps
-          </h3>
-          <ul className="space-y-3">
-            {recipe.swaps.map((swap, index) => <li key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-              <div className="flex items-center">
-                <span className="font-medium text-gray-800">
-                  {swap.original}
-                </span>
-                <span className="mx-3 text-gray-400">→</span>
-                <span className="text-gray-700">{swap.alternative}</span>
-              </div>
-            </li>)}
-          </ul>
-        </section>}
-        {/* Cook Now Button */}
-        {!cooked && <button onClick={handleCookNow} className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-semibold py-4 px-6 rounded-xl shadow-md transition-colors duration-200 mt-4">
-          I Cooked This
-        </button>}
       </main>
     </div></div>;
 }

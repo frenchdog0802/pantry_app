@@ -6,7 +6,8 @@ import { on } from 'events';
 interface HomeProps {
   onCookWithWhatIHave: () => void;
   onViewCalendar: () => void;
-  onManagePantry: (activeTabParam: string) => void;
+  onPantryInventory: () => void;
+  onShoppingList: () => void;
   onRecipeManager: () => void;
   onSettings: () => void;
   onLogin: () => void;
@@ -14,7 +15,8 @@ interface HomeProps {
 export function Home({
   onCookWithWhatIHave,
   onViewCalendar,
-  onManagePantry,
+  onPantryInventory,
+  onShoppingList,
   onRecipeManager,
   onSettings,
   onLogin,
@@ -22,7 +24,8 @@ export function Home({
   const {
     shoppingList,
     pantryItems,
-    queryPantryData,
+    fetchAllPantryItems,
+    fetchAllShoppingListItems
   } = usePantry();
   const {
     user: user,
@@ -33,7 +36,8 @@ export function Home({
     if (!user) {
       onLogin();
     }
-    queryPantryData();
+    fetchAllPantryItems();
+    fetchAllShoppingListItems();
   }, [user]);
   // Count items that need to be bought (in shopping list)
   const itemsToBuy = shoppingList.filter(item => !item.checked).length;
@@ -76,7 +80,7 @@ export function Home({
           My Kitchen Stats
         </h3>
         <div className="grid grid-cols-2 gap-6">
-          <div className="bg-gray-50 p-5 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:bg-pink-50 hover:border-pink-100 transition-colors" onClick={() => onManagePantry('inventory')}>
+          <div className="bg-gray-50 p-5 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:bg-pink-50 hover:border-pink-100 transition-colors" onClick={onPantryInventory}>
             <div className="flex items-center">
               <div className="text-3xl font-bold text-red-600 mb-1 mr-2">
                 {pantryItems.length}
@@ -85,7 +89,7 @@ export function Home({
             </div>
             <p className="text-gray-600">Items in Pantry</p>
           </div>
-          <div className="bg-gray-50 p-5 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:bg-blue-50 hover:border-blue-100 transition-colors" onClick={() => onManagePantry('shopping')}>
+          <div className="bg-gray-50 p-5 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:bg-blue-50 hover:border-blue-100 transition-colors" onClick={onShoppingList}>
             <div className="flex items-center">
               <div className="text-3xl font-bold text-blue-600 mb-1 mr-2">
                 {itemsToBuy}
