@@ -71,8 +71,22 @@ export const createShoppingListItem = async (req, res) => {
                     default_unit: item.unit || ""
                 });
             }
-
             ingredientObj = ingredient;
+        }
+
+        // if not exists in pantryItem create it 
+        let pantryItem = await PantryItem.findOne({
+            user_id: userId,
+            ingredient_id: ingredientObj._id,
+        });
+
+        if (!pantryItem) {
+            pantryItem = await PantryItem.create({
+                user_id: userId,
+                ingredient_id: ingredientObj._id,
+                quantity: 0,
+                unit: ingredientObj.default_unit || "",
+            });
         }
 
         const shoppingListItem = await ShoppingListItem.create({

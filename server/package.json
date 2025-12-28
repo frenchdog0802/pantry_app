@@ -43,6 +43,7 @@
     "mongoose": "^8.16.4",
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",
-    "openai": "^6.10.0"
+    "openai": "^6.10.0",
+    "redis": "^5.10.0"
   }
 }

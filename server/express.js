@@ -14,9 +14,10 @@ import pantryItemRoute from "./routes/pantryItem.route.js";
 import shoppingListRoute from "./routes/shoppingList.route.js";
 import mealPlanRoute from "./routes/mealPlan.route.js";
 import uploadRoute from "./routes/upload.route.js";
+import { connectRedis } from "./config/redis.js";
 
 const app = express();
-
+await connectRedis();
 const CURRENT_WORKING_DIR = process.cwd();
 app.use(cors({
   origin: 'http://localhost:5173',  // Allow frontend to access from this domain

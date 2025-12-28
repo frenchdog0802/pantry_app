@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Home } from './components/Home';
-// import { RecipeSuggestions } from './components/RecipeSuggestions';
-// import { RecipeDetail } from './components/RecipeDetail';
 import { Calendar } from './components/Calendar';
-import { PantryManager } from './components/PantryManager';
+import { PantryInventory } from './components/PantryInventory';
+import { ShoppingList } from './components/ShoppingList';
 import { RecipeManager } from './components/RecipeManager';
 import { Login } from './components/Login';
 import { SignUp } from './components/SignUp';
@@ -13,13 +12,10 @@ import { PantryProvider } from './contexts/pantryContext';
 import { AuthProvider, useAuth } from './contexts/authContext';
 import { AICookingAssistant } from './components/AICookingAssistant';
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import { useLocation } from 'react-router-dom';
 import { BottomNav } from './components/BottomNav';
 
 function AppContent() {
   const [currentView, setCurrentView] = useState('home');
-  const [selectedRecipe, setSelectedRecipe] = useState(null);
-  const [viewData, setViewData] = useState<any>(null);
   const {
     isAuthenticated,
     loading
@@ -32,13 +28,8 @@ function AppContent() {
     }
   }, [isAuthenticated, loading]);
 
-  const handleNavigate = (view: string, activeTabParam: string = '') => {
+  const handleNavigate = (view: string,) => {
     setCurrentView(view);
-    if (view === 'pantryManager') {
-      setViewData({ activeTabParam });
-    } else {
-      setViewData(null);
-    }
   };
 
   const navigateToSignUp = () => {
@@ -54,10 +45,14 @@ function AppContent() {
   const navigateToCalendar = () => {
     setCurrentView('calendar');
   };
-  const navigateToPantryManager = (activeTabParam: string = '') => {
-    setCurrentView('pantryManager');
-    setViewData({ activeTabParam });
+
+  const navigateToPantryInventory = () => {
+    setCurrentView('pantryInventory');
   };
+
+  const navigateToShoppingList = () => {
+    setCurrentView('shoppingList');
+  }
   const navigateToRecipeManager = () => {
     setCurrentView('recipeManager');
   };
@@ -67,23 +62,23 @@ function AppContent() {
   const navigateToAiAssistant = () => {
     setCurrentView('aiAssistant');
   }
+
   // Show loading screen while checking authentication
   if (loading) {
     return <Loading fullScreen />;
   }
   return <div className="w-full min-h-screen bg-gray-50">
     {currentView === 'login' && <Login onLoginSuccess={navigateToHome} onSignUp={navigateToSignUp} />}
-    {currentView === 'home' && isAuthenticated && <Home onLogin={navigateToLogin} onCookWithWhatIHave={navigateToAiAssistant} onViewCalendar={navigateToCalendar} onManagePantry={navigateToPantryManager} onRecipeManager={navigateToRecipeManager} onSettings={navigateToSettings} />}
-    {/* {currentView === 'suggestions' && isAuthenticated && <RecipeSuggestions onSelectRecipe={navigateToRecipeDetail} onBack={navigateToHome} />}
-      {currentView === 'recipeDetail' && isAuthenticated && <RecipeDetail recipe={selectedRecipe} onBack={() => setCurrentView('suggestions')} />} */}
+    {currentView === 'home' && isAuthenticated && <Home onLogin={navigateToLogin} onCookWithWhatIHave={navigateToAiAssistant} onViewCalendar={navigateToCalendar} onPantryInventory={navigateToPantryInventory} onShoppingList={navigateToShoppingList} onRecipeManager={navigateToRecipeManager} onSettings={navigateToSettings} />}
     {currentView === 'aiAssistant' && isAuthenticated && <AICookingAssistant onBack={navigateToHome} />}
     {currentView === 'calendar' && isAuthenticated && <Calendar onBack={navigateToHome} />}
-    {currentView === 'pantryManager' && isAuthenticated && <PantryManager onBack={navigateToHome} onManagePantry={(activeTabParam) => navigateToPantryManager(activeTabParam)} activeTabParam={viewData?.activeTabParam} />}
     {currentView === 'recipeManager' && isAuthenticated && <RecipeManager onBack={navigateToHome} />}
     {currentView === 'settings' && isAuthenticated && <Settings onBack={navigateToHome} />}
+    {currentView === 'pantryInventory' && isAuthenticated && <PantryInventory onBack={navigateToHome} />}
+    {currentView === 'shoppingList' && isAuthenticated && <ShoppingList onBack={navigateToHome} />}
     {currentView === 'signup' && <SignUp onSignUpSuccess={navigateToHome} onLogin={navigateToLogin} />}
     {currentView !== 'login' && currentView !== 'signup' && (
-      <BottomNav activeView={currentView} onNavigate={handleNavigate} activeTabParam={viewData?.activeTabParam} />
+      <BottomNav activeView={currentView} onNavigate={handleNavigate} />
     )}
   </div>;
 }

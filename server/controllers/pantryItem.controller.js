@@ -4,7 +4,7 @@ import { successResponse, errorResponse } from "../utils/apiResponse.js";
 import ShoppingListItem from "../models/shoppingList.model.js";
 import MealPlan from "../models/mealPlan.model.js";
 import RecipeIngredient from "../models/recipeIngredient.model.js";
-
+import RedisHelper from "../helpers/redisHelper.js";
 // Insert all
 export const insertAllPantryItems = async (req, res) => {
     try {
@@ -106,13 +106,11 @@ export const getAllPantryItems = async (req, res) => {
         const pantryItems = await PantryItem.find({ user_id: userId });
         // find item to buy from shopping list 
         const shoppingListItems = await ShoppingListItem.find({ user_id: userId });
-        // find planned meals from meal plan serving_date greater than today 
+        // find planned meals from meal plan serving_date greater than yesterday (start of today) 
         const today = new Date().toISOString().split('T')[0];
         // unix timestamp at start of today
         const startOfToday = new Date(today).getTime();
         const mealPlans = await MealPlan.find({ user_id: userId, serving_date: { $gte: startOfToday } });
-        // find recipe ingredients from meal plans
-        const recipeIngredients = await RecipeIngredient.find({ recipe_id: { $in: mealPlans.map(mp => mp.recipe_id) } });
         // sum quantity of meal plan ingredients by ingredient_id
         const ingredientQuantityMap = {};
         for (const mealPlan of mealPlans) {
@@ -143,6 +141,9 @@ export const getAllPantryItems = async (req, res) => {
                 unit: ingredient ? item.unit : ingredient.default_unit
             };
         }));
+
+        // 7days cache
+        RedisHelper.setCache(RedisHelper.REDIS_KEYS.PANTRY_ITEMS(userId), itemsWithNames, 604800);
         res.json(successResponse(itemsWithNames));
     } catch (err) {
         res.json(errorResponse({ message: err.message }));

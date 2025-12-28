@@ -8,9 +8,8 @@ import { shoppingListApi } from '../api/shoppingList';
 import { mealPlanApi } from '../api/mealPlan';
 
 interface PantryContextType {
-  queryPantryData: () => void;
   recipes: Recipe[];
-  fetchAllRecipes: () => void;
+  fetchAllRecipes: () => Promise<Recipe[]>;
   addRecipe: (Recipe: Recipe) => void;
   updateRecipe: (Recipe: Recipe) => void;
   deleteRecipe: (id: string) => void;
@@ -38,19 +37,17 @@ interface PantryContextType {
 
   // shopping List
   shoppingList: ShoppingListItem[];
-  fetchAllShoppingListItems: () => void;
-  updateShoppingListItem: (item: ShoppingListItem) => Promise<ApiResponse>;
+  fetchAllShoppingListItems: () => Promise<ShoppingListItem[]>;
+  updateShoppingListItem: (item: ShoppingListItem) => Promise<ApiResponse<ShoppingListItem>>;
   addShoppingListItem: (item: Omit<ShoppingListItem, 'id'>) => void;
   removeShoppingListItem?: (id: string) => void;
 
   // meal plans
   mealPlan: MealPlan[];
-  fetchAllMealPlans: () => void;
-  addMealPlan: (mealPlan: MealPlan) => void;
+  fetchAllMealPlans: () => Promise<MealPlan[]>;
+  addMealPlan: (mealPlan: MealPlan) => Promise<ApiResponse<MealPlan>>;
   updateMealPlan: (mealPlan: MealPlan) => void;
   deleteMealPlan: (id: string) => void;
-
-
 }
 
 const PantryContext = createContext<PantryContextType | undefined>(undefined);
@@ -129,12 +126,12 @@ export function PantryProvider({
       const fetchedRecipesResponse = await recipeApi.list();
       if (fetchedRecipesResponse && fetchedRecipesResponse.data && fetchedRecipesResponse.success) {
         console.log('Fetched recipes response:', fetchedRecipesResponse);
-        const fetchedRecipes = fetchedRecipesResponse.data;
-        setRecipes(fetchedRecipes);
+        return fetchedRecipesResponse.data;
       }
     } catch (err) {
       console.error('Fetch recipes failed:', err);
     }
+    return [];
   }
   const addRecipe = async (recipe: Recipe) => {
     // temporary recipe for optimistic UI
@@ -256,10 +253,12 @@ export function PantryProvider({
       if (fetchedItemsResponse && fetchedItemsResponse.data && fetchedItemsResponse.success) {
         const fetchedItems = fetchedItemsResponse.data;
         setShoppingList(fetchedItems);
+        return fetchedItems;
       }
     } catch (err) {
       console.error('Fetch shopping list items failed:', err);
     }
+    return [];
   };
   const updateShoppingListItem = async (item: ShoppingListItem) => {
     setShoppingList(prev => prev.map(i => i.id === item.id ? item : i));
@@ -307,20 +306,20 @@ export function PantryProvider({
       const fetchedMealPlansResponse = await mealPlanApi.list();
       if (fetchedMealPlansResponse && fetchedMealPlansResponse.data && fetchedMealPlansResponse.success) {
         const fetchedMealPlans = fetchedMealPlansResponse.data;
-        setMealPlan(fetchedMealPlans);
+        return fetchedMealPlans;
       }
     } catch (err) {
       console.error('Fetch meal plans failed:', err);
     }
+    return [];
   };
-  const addMealPlan = async (mealPlan: MealPlan) => {
+  const addMealPlan = async (mealPlan: MealPlan): Promise<ApiResponse<MealPlan>> => {
     // temporary meal plan for optimistic UI
     const tempMealPlan: MealPlan = {
       ...mealPlan,
     };
 
     setMealPlan(prev => [...prev, tempMealPlan]);
-
     try {
       const savedMealPlanResponse = await mealPlanApi.create(mealPlan);
       if (savedMealPlanResponse && savedMealPlanResponse.data && savedMealPlanResponse.success) {
@@ -334,10 +333,12 @@ export function PantryProvider({
         // rollback if response is invalid
         setMealPlan(prev => prev.filter(m => m.id !== tempMealPlan.id));
       }
+      return savedMealPlanResponse as ApiResponse<MealPlan>;
     } catch (err) {
       console.error('Insert meal plan failed:', err);
       // rollback if needed
       setMealPlan(prev => prev.filter(m => m.id !== tempMealPlan.id));
+      return { success: false } as ApiResponse<MealPlan>;
     }
   };
   const updateMealPlan = (mealPlan: MealPlan) => {
@@ -349,20 +350,7 @@ export function PantryProvider({
     mealPlanApi.delete(id);
   };
 
-
-  const queryPantryData = () => {
-    fetchAllFolders();
-    fetchAllRecipes();
-    fetchAllPantryItems();
-    fetchAllShoppingListItems();
-    fetchAllMealPlans();
-    fetchAllIngredients(null);
-  };
-
-
-
   return <PantryContext.Provider value={{
-    queryPantryData,
     recipes,
     pantryItems,
     shoppingList,

@@ -3,53 +3,39 @@ import { HomeIcon, CalendarIcon, PackageIcon, UtensilsIcon, SettingsIcon, Shoppi
 
 interface BottomNavProps {
   activeView: string;
-  activeTabParam?: string;
   onNavigate: (view: string, activeTabParam?: string) => void;
 }
 
 export function BottomNav({
   activeView,
-  activeTabParam,
-  onNavigate // <-- Ensure onNavigate is destructured and available
+  onNavigate
 }: BottomNavProps) {
 
   const navItems = [{
-    id: 'home',
     pageId: 'home',
     icon: HomeIcon,
     label: 'Home',
-    activeTabParam: ''
   }, {
-    id: 'calendar',
     pageId: 'calendar',
     icon: CalendarIcon,
     label: 'Calendar',
-    activeTabParam: ''
   }, {
-    id: 'pantryManager', // The Pantry Tab
-    pageId: 'pantryManager',
+    pageId: 'pantryInventory',
     icon: PackageIcon,
-    label: 'Pantry',
-    activeTabParam: 'inventory'
+    label: 'pantry',
   }, {
-    id: 'shoppingList', // The Shopping Tab
-    pageId: 'pantryManager',
+    pageId: 'shoppingList',
     icon: ShoppingCart,
     label: 'Shopping',
-    activeTabParam: 'shopping'
   }, {
-    id: 'recipeManager',
     pageId: 'recipeManager',
     icon: UtensilsIcon,
     label: 'Recipes',
-    activeTabParam: ''
   },
   {
-    id: 'settings',
     pageId: 'settings',
     icon: SettingsIcon,
     label: 'Settings',
-    activeTabParam: ''
   }];
 
   return (
@@ -57,20 +43,12 @@ export function BottomNav({
       <div className="grid grid-cols-6 h-16 max-w-screen-lg mx-auto">
         {navItems.map(item => {
           const Icon = item.icon;
-
-          // --- ACTIVE LOGIC (from previous refactor) ---
-          const isPantryPage = item.pageId === 'pantryManager';
-
-          const isActive = isPantryPage
-            ? (activeView === item.pageId && activeTabParam === item.activeTabParam)
-            : (activeView === item.pageId);
-          // ---------------------------------------------
-
+          const isActive = activeView === item.pageId
           return (
             <button
-              key={item.id}
+              key={item.pageId}
               // FIX: Ensure onNavigate is called correctly with the item's pageId and activeTabParam
-              onClick={() => onNavigate(item.pageId, item.activeTabParam)}
+              onClick={() => onNavigate(item.pageId)}
               className={`flex flex-col items-center justify-center transition-colors ${isActive ? 'text-red-600' : 'text-gray-500 hover:text-gray-700'}`}>
               <Icon size={20} className={isActive ? 'stroke-[2.5]' : ''} />
               <span className="text-[10px] mt-0.5 font-medium">

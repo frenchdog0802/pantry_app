@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
-import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, ImageIcon, PlusIcon, TrashIcon, XIcon, AlertCircleIcon, SearchIcon, ChevronDownIcon, CalendarIcon, ListIcon, MoreHorizontalIcon, ChevronUpIcon } from 'lucide-react';
+import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, CheckIcon, PackageIcon, ImageIcon, PlusIcon, TrashIcon, XIcon, AlertCircleIcon, SearchIcon, ChevronDownIcon, CalendarIcon, ListIcon, MoreHorizontalIcon, ChevronUpIcon } from 'lucide-react';
 import { usePantry } from '../contexts/pantryContext';
-import { MealPlan } from '../api/types';
+import { MealPlan, Recipe } from '../api/types';
 interface CalendarProps {
   onBack: () => void;
 }
@@ -9,12 +9,15 @@ export function Calendar({
   onBack
 }: CalendarProps) {
   const {
-    mealPlan,
     addMealPlan,
     deleteMealPlan,
-    recipes: storedRecipes
+    fetchAllMealPlans,
+    fetchAllRecipes
   } = usePantry();
-  const [mealPlans, setMealPlans] = useState<MealPlan[]>(mealPlan || []);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [showRecipeDetailModal, setShowRecipeDetailModal] = useState(false);
+  const [selectedRecipeForDetail, setSelectedRecipeForDetail] = useState<Recipe | null>(null);
+  const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
@@ -42,10 +45,25 @@ export function Calendar({
   // Get current month and year
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
+  // New state for notification
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
   // Get number of days in current month
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   // Get day of week of first day of month (0 = Sunday, 6 = Saturday)
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+  useEffect(() => {
+    const fetchMealPlans = async () => {
+      const plans = await fetchAllMealPlans();
+      setMealPlans(plans || []);
+    };
+    const fetchReceipes = async () => {
+      const fetchedRecipes = await fetchAllRecipes();
+      setRecipes(fetchedRecipes);
+    };
+    fetchMealPlans();
+    fetchReceipes();
+  }, []);
   // Create array of days for the calendar
   const calendarDays = Array.from({
     length: 42
@@ -147,15 +165,18 @@ export function Calendar({
     setShowDeleteConfirmation(true);
   };
   // Confirm recipe deletion
-  const confirmDeleteRecipe = () => {
+  const confirmDeleteRecipe = async () => {
     if (recipeToDelete) {
-      deleteMealPlan(recipeToDelete.id);
+      await deleteMealPlan(recipeToDelete.id);
       setShowDeleteConfirmation(false);
       setRecipeToDelete(null);
+
+      // Also remove from local state
+      setMealPlans(prev => prev.filter(mp => mp.id !== recipeToDelete.id));
     }
   };
   // Filter recipes based on search query
-  const filteredRecipes = storedRecipes.filter(recipe => {
+  const filteredRecipes = recipes.filter(recipe => {
     // For meal recipes
     if (recipe) {
       return recipe.meal_name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -167,7 +188,7 @@ export function Calendar({
     setSelectedRecipeId(recipeId);
     setIsDropdownOpen(false);
     // Update recipe name in search field
-    const selectedRecipe = storedRecipes.find(r => r.id === recipeId);
+    const selectedRecipe = recipes.find(r => r.id === recipeId);
     if (selectedRecipe) {
       if (selectedRecipe) {
         setSearchQuery(selectedRecipe.meal_name);
@@ -187,10 +208,10 @@ export function Calendar({
     };
   }, [dropdownRef]);
   // Save selected recipe to calendar
-  const handleSaveRecipe = () => {
+  const handleSaveRecipe = async () => {
     if (!selectedRecipeId) return;
     // Find the selected recipe
-    const recipe = storedRecipes.find(r => r.id === selectedRecipeId);
+    const recipe = recipes.find(r => r.id === selectedRecipeId);
     if (!recipe) return;
     // Format the date string
     const dateString = selectedDate ? formatDateString(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate()) : new Date().toISOString().split('T')[0];
@@ -206,14 +227,35 @@ export function Calendar({
       meal_type: selectedMealType,
       serving_date: dateString,
     };
-    addMealPlan(calendarRecipe);
-    setMealPlans([...mealPlans, calendarRecipe]);
+    const response = await addMealPlan(calendarRecipe);
+    if (response && response.success) {
+      const newMealPlan = { ...calendarRecipe, id: response.data.id, image: response.data.image_url };
+      if (response.data.notEnoughItems && response.data.notEnoughItems.length > 0) {
+        // Show notification
+        setNotificationMessage('Recipe added! Required ingredients automatically added to your shopping list.');
+        setShowNotification(true);
+      } else {
+        setNotificationMessage('Recipe added to calendar!');
+        // No issues, add to state
+        setMealPlans(prev => [...prev, newMealPlan]);
+        // Reset and close modal
+        resetAddModal();
+      }
+    }
 
-    // Reset and close modal
+    // Auto close NotificationMessage after 3 seconds
+    setTimeout(() => {
+      setShowNotification(false);
+    }, 3000);
+
+  };
+
+  const resetAddModal = () => {
     setSelectedRecipeId('');
     setSearchQuery('');
     setShowAddRecipeModal(false);
   };
+
   // Week navigation functions
   const goToPreviousWeek = () => {
     const newWeekStart = new Date(currentWeekStart);
@@ -284,6 +326,14 @@ export function Calendar({
       day: 'numeric'
     });
   };
+
+  const handleMealClick = (item: MealPlan) => {
+    const recipe = recipes.find(r => r.id === item.recipe_id);
+    if (recipe) {
+      setSelectedRecipeForDetail(recipe);
+      setShowRecipeDetailModal(true);
+    }
+  };
   // Format week range for display
   const getWeekRangeDisplay = () => {
     const weekStart = new Date(currentWeekStart);
@@ -315,6 +365,7 @@ export function Calendar({
   useEffect(() => {
     // Initially expand today's group if it exists in current week
     const today = new Date().toISOString().split('T')[0];
+    setSelectedDate(new Date());
     const weekData = getWeekViewData();
     if (weekData[today]) {
       setExpandedDateGroups([today]);
@@ -323,6 +374,7 @@ export function Calendar({
       setExpandedDateGroups([Object.keys(weekData)[0]]);
     }
   }, [currentWeekStart]);
+
   return <div className="flex flex-col w-full min-h-screen bg-gray-50">
     <div className="flex-1 overflow-y-auto pb-20">
       {/* Header */}
@@ -524,9 +576,9 @@ export function Calendar({
                   {getMealTypeLabel(type)}:
                 </h4>
                 <div className="space-y-2">
-                  {meals.map((item: MealPlan, index: number) => <div key={index} className={`p-4 rounded-lg border ${getMealTypeColor(type)}`}>
+                  {meals.map((item: MealPlan, index: number) => <div key={index} className={`p-4 rounded-xl border ${getMealTypeColor(type)} cursor-pointer hover:shadow-md transition-shadow`}>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center min-w-0 flex-1">
+                      <div className="flex items-center min-w-0 flex-1" onClick={() => handleMealClick(item)}>
                         <div className={`w-1.5 h-1.5 rounded-full mr-2 flex-shrink-0 ${type === 'breakfast' ? 'bg-blue-500' : type === 'lunch' ? 'bg-amber-500' : type === 'dinner' ? 'bg-red-500' : 'bg-green-500'}`}></div>
                         <p className="font-medium text-sm text-gray-800 truncate">
                           {item.meal_name}
@@ -553,6 +605,36 @@ export function Calendar({
       </main>
       {/* Add Recipe Modal */}
       {showAddRecipeModal && <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        {/* Notification Toast */}
+        {showNotification && (
+          <div className="fixed top-4 right-4 z-50 max-w-sm">
+            <div className="flex items-start gap-3 bg-white border border-red-200 rounded-xl shadow-lg p-4">
+
+              {/* Icon */}
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
+                <CheckIcon size={16} className="text-white" />
+              </div>
+
+              {/* Message */}
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-800">
+                  {notificationMessage}
+                </p>
+              </div>
+
+              {/* Close */}
+              <button
+                onClick={() => {
+                  setShowNotification(false);
+                  setNotificationMessage('');
+                }}
+                className="text-gray-400 hover:text-gray-600 transition"
+              >
+                <XIcon size={16} />
+              </button>
+            </div>
+          </div>
+        )}
         <div className="bg-white rounded-xl shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
           <div className="p-4 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10 rounded-t-2xl">
             <h3 className="font-semibold text-gray-800 text-base">
@@ -651,5 +733,82 @@ export function Calendar({
           </div>
         </div>
       </div>}
+      {showRecipeDetailModal && selectedRecipeForDetail && <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50 animate-fade-in">
+        <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-slide-up">
+          {/* Header */}
+          <div className="sticky top-0 bg-white border-b border-gray-100 z-10">
+            <div className="p-5 flex justify-between items-start">
+              <div className="flex-1 min-w-0 mr-4">
+                <h2 className="text-2xl font-bold text-gray-800 truncate">
+                  {selectedRecipeForDetail.meal_name}
+                </h2>
+              </div>
+              <button onClick={() => {
+                setShowRecipeDetailModal(false);
+                setSelectedRecipeForDetail(null);
+              }} className="p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 flex-shrink-0" aria-label="Close">
+                <XIcon size={24} className="text-gray-500" />
+              </button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
+            {/* Recipe Image */}
+            {selectedRecipeForDetail.image && <div className="w-full h-64 relative">
+              <img src={selectedRecipeForDetail.image.url} alt={selectedRecipeForDetail.meal_name || 'Recipe'} className="w-full h-full object-cover" />
+            </div>}
+
+            <div className="p-6 space-y-6">
+              {/* Ingredients Section */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <PackageIcon size={20} className="mr-2 text-red-500" />
+                  Ingredients
+                </h3>
+                <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                  {selectedRecipeForDetail.ingredients && selectedRecipeForDetail.ingredients.map((item: any, index: number) => <div key={index} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
+                    <div className="flex items-center flex-1">
+                      <div className="w-2 h-2 rounded-full bg-red-500 mr-3"></div>
+                      <div>
+                        <span className="font-medium text-gray-800 capitalize">
+                          {item.name}
+                        </span>
+                        <span className="text-sm text-gray-500 ml-2">
+                          {item.quantity && item.unit ? `(${item.quantity} ${item.unit})` : ''}
+                        </span>
+                      </div>
+                    </div>
+                    {item.price && item.quantity && <span className="font-medium text-gray-700">
+                      ${(item.price * item.quantity).toFixed(2)}
+                    </span>}
+                  </div>)}
+                </div>
+              </div>
+
+              {/* Additional Info */}
+              {selectedRecipeForDetail && <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                <p className="text-sm text-blue-800">
+                  <span className="font-medium">Intruction: </span>{' '}
+                  1. Preheat your oven to 350°F (175°C).{' '}
+                  2. Mix all ingredients in a bowl until well combined.{' '}
+                  {/* {getMealTypeLabel(selectedRecipeForDetail.mealInfo.type)} */}
+                </p>
+              </div>}
+            </div>
+          </div>
+
+          {/* Footer Actions */}
+          <div className="sticky bottom-0 bg-white border-t border-gray-100 p-4">
+            <button onClick={() => {
+              setShowRecipeDetailModal(false);
+              setSelectedRecipeForDetail(null);
+            }} className="w-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 font-medium py-3 rounded-xl transition-colors">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>}
+
     </div></div>;
 }
