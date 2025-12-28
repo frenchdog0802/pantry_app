@@ -1,8 +1,12 @@
 // server/config/redis.js
 import { createClient } from "redis";
+import config from "../config/config.js";
 
 const redis = createClient({
-    url: "redis://localhost:6379"
+    url: config.redisUrl,
+    socket: {
+        tls: false,
+    }
 });
 
 redis.on("connect", () => {

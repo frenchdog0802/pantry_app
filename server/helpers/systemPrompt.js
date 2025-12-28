@@ -28,9 +28,7 @@ If type is "recipe", data MUST be:
   "ingredients": [
     { "name": "string", "quantity": number, "unit": "string" }
   ],
-  "steps": ["string"],
-  "cookTime": "string",
-  "servings": number
+  "steps": ["string"]
 }
 
 If type is "tip", data MUST be:

@@ -10,6 +10,7 @@ const config = {
     cloudinaryApiKey: safeEnv('CLOUDINARY_API_KEY') || '862352563776518',
     cloudinaryApiSecret: safeEnv('CLOUDINARY_API_SECRET') || 'cqdZDMRF_kUoPkVKnmPUe08hYCk',
     openAIApiKey: safeEnv('OPENAI_API_KEY') || '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',
+    redisUrl: safeEnv('REDIS_URL') || 'redis://default:Vk6uzJqcIDSDjYP6uZlgDuQQ1hDXWo0H@redis-19969.c62.us-east-1-4.ec2.cloud.redislabs.com:19969',
 }
 
 if (config.env === 'production' && (!config.jwtSecret || !config.mongoUri)) {
