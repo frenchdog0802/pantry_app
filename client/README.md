@@ -1,13 +1,3 @@
-# Magic Patterns - Vite Template
-
-## Getting Started
-
-1. Run `npm install`
-2. Run `npm run dev`
-
-
-
-## Server package.json is in root
 ## Client package.json is in root/client
 
 ## jwt Token
