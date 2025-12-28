@@ -9,7 +9,7 @@ const config = {
     cloudinarycloudName: safeEnv('CLOUDINARY_CLOUD_NAME') || 'ddtjd5tbg',
     cloudinaryApiKey: safeEnv('CLOUDINARY_API_KEY') || '862352563776518',
     cloudinaryApiSecret: safeEnv('CLOUDINARY_API_SECRET') || 'cqdZDMRF_kUoPkVKnmPUe08hYCk',
-    openAIApiKey: safeEnv('OPENAI_API_KEY') || 'sk-xxxx',
+    openAIApiKey: safeEnv('OPENAI_API_KEY') || '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',
 }
 
 if (config.env === 'production' && (!config.jwtSecret || !config.mongoUri)) {

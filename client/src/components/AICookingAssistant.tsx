@@ -5,10 +5,17 @@ import { IngredientEntry, PantryItem, Recipe, RecipeSuggestion } from '../api/ty
 interface AICookingAssistantProps {
   onBack: () => void;
 }
+type MessageType =
+  | 'text'
+  | 'recipe'
+  | 'system'
+  | 'confirmation'
+  | 'error';
 // Define message types
 interface Message {
   id: string;
   role: 'user' | 'assistant';
+  type?: MessageType;
   content: string;
   timestamp: number;
 }
