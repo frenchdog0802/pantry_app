@@ -1,5 +1,9 @@
 // safe accessor for environments where `process` may be undefined (e.g. browsers)
+import dotenv from 'dotenv';
+dotenv.config();
+
 const safeEnv = (key) => (typeof process !== 'undefined' && process.env && process.env[key]) ? process.env[key] : undefined;
+
 
 const config = {
     env: safeEnv('NODE_ENV') || 'development',
@@ -9,10 +13,12 @@ const config = {
     cloudinarycloudName: safeEnv('CLOUDINARY_CLOUD_NAME') || 'ddtjd5tbg',
     cloudinaryApiKey: safeEnv('CLOUDINARY_API_KEY') || '862352563776518',
     cloudinaryApiSecret: safeEnv('CLOUDINARY_API_SECRET') || 'cqdZDMRF_kUoPkVKnmPUe08hYCk',
-    openAIApiKey: safeEnv('OPENAI_API_KEY') || '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',
+    openAIApiKey: safeEnv('OPENAI_API_KEY') || '',
     redisUrl: safeEnv('REDIS_URL') || 'redis://default:Vk6uzJqcIDSDjYP6uZlgDuQQ1hDXWo0H@redis-19969.c62.us-east-1-4.ec2.cloud.redislabs.com:19969',
     stripeSecretKey: safeEnv('STRIPE_SECRET_KEY'),
     stripeWebhookSecret: safeEnv('STRIPE_WEBHOOK_SECRET'),
+    // Auth0 configuration for mobile SSO
+    auth0Domain: safeEnv('AUTH0_DOMAIN') || 'dev-r1tfs3j17m7ipwcs.us.auth0.com',
 }
 
 if (config.env === 'production' && (!config.jwtSecret || !config.mongoUri)) {
