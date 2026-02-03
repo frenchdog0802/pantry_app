@@ -18,6 +18,7 @@ const UserSchema = new mongoose.Schema(
     ConnectAccount: { type: String },
     salt: String,
     googleId: { type: String },
+    auth0Id: { type: String },  // Auth0 user identifier (sub claim)
     picture: { type: String },
     createdAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
     updatedAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },

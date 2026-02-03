@@ -227,6 +227,157 @@ const googleLogin = async (req, res, next) => {
   }
 };
 
+/**
+ * Auth0 Login - Handles mobile SSO via Auth0 (Google, Facebook, Apple)
+ * Verifies Auth0 ID token and creates/authenticates user
+ */
+const auth0Login = async (req, res) => {
+  const now = () => new Date().toISOString();
+  const mask = (s) => (s ? `${s.slice(0, 6)}...${s.slice(-6)}` : s);
+
+  console.log(`[${now()}] auth0Login invoked`, {
+    method: req.method,
+    url: req.originalUrl || req.url,
+    ip: req.ip || req.connection?.remoteAddress,
+    userAgent: req.get?.('User-Agent') || req.headers['user-agent'],
+  });
+
+  const { idToken, accessToken } = req.body;
+
+  if (!idToken) {
+    console.log(`[${now()}] Missing idToken in request body`);
+    return res.json(errorResponse('ID token is required'));
+  }
+
+  console.log(`[${now()}] Received idToken (masked):`, mask(idToken));
+
+  try {
+    // Decode the ID token to get claims (header + payload)
+    const tokenParts = idToken.split('.');
+    if (tokenParts.length !== 3) {
+      throw new Error('Invalid JWT format');
+    }
+
+    // Decode payload (base64url decode)
+    const payload = JSON.parse(
+      Buffer.from(tokenParts[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString()
+    );
+
+    console.log(`[${now()}] Decoded token payload:`, {
+      sub: payload.sub,
+      email: payload.email,
+      name: payload.name,
+      iss: payload.iss,
+      aud: payload.aud,
+      exp: payload.exp,
+    });
+
+    // Verify issuer is from our Auth0 domain
+    const expectedIssuer = `https://${config.auth0Domain}/`;
+    if (payload.iss !== expectedIssuer) {
+      console.error(`[${now()}] Invalid issuer: ${payload.iss} !== ${expectedIssuer}`);
+      return res.json(errorResponse('Invalid token issuer'));
+    }
+
+    // Verify token hasn't expired
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (payload.exp && payload.exp < currentTime) {
+      console.error(`[${now()}] Token expired: exp=${payload.exp} current=${currentTime}`);
+      return res.json(errorResponse('Token has expired'));
+    }
+
+    const auth0Id = payload.sub;
+    const email = payload.email;
+    const name = payload.name || payload.nickname || email?.split('@')[0] || 'User';
+    const picture = payload.picture;
+
+    // Try to find user by auth0Id first
+    console.log(`[${now()}] Looking up user by auth0Id:`, auth0Id);
+    let existingUser = await User.findOne({ auth0Id: auth0Id });
+
+    // If not found by auth0Id, try email (for linking existing accounts)
+    if (!existingUser && email) {
+      console.log(`[${now()}] No auth0Id match, trying email:`, email);
+      existingUser = await User.findOne({ email: email });
+
+      // Link Auth0 account to existing email account
+      if (existingUser) {
+        console.log(`[${now()}] Linking Auth0 account to existing user:`, existingUser._id);
+        existingUser.auth0Id = auth0Id;
+        if (picture && !existingUser.picture) {
+          existingUser.picture = picture;
+        }
+        await existingUser.save();
+      }
+    }
+
+    if (existingUser) {
+      console.log(`[${now()}] User found:`, {
+        _id: existingUser._id,
+        email: existingUser.email,
+        name: existingUser.name,
+      });
+
+      const token = jwt.sign({ user_id: existingUser._id }, config.jwtSecret);
+      return res.json(successResponse({
+        token: token,
+        message: 'User authenticated via Auth0.',
+        user: {
+          id: existingUser._id,
+          email: existingUser.email,
+          name: existingUser.name,
+        },
+      }));
+    }
+
+    // Create new user
+    console.log(`[${now()}] Creating new user from Auth0 profile...`);
+
+    // Parse name into first/last
+    const nameParts = name.split(' ');
+    const firstName = nameParts[0] || 'User';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    const newUser = await User.create({
+      auth0Id: auth0Id,
+      email: email,
+      first_name: firstName,
+      last_name: lastName || firstName,
+      name: name,
+      picture: picture,
+      password: Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12),
+      ConnectAccount: 'Auth0',
+    });
+
+    console.log(`[${now()}] New user created:`, {
+      _id: newUser._id,
+      email: newUser.email,
+      name: newUser.name,
+    });
+
+    const token = jwt.sign({ user_id: newUser._id }, config.jwtSecret);
+    return res.json(successResponse({
+      token: token,
+      message: 'User registered via Auth0.',
+      user: {
+        id: newUser._id,
+        email: newUser.email,
+        name: newUser.name,
+      },
+    }));
+
+  } catch (error) {
+    console.error(`[${now()}] Auth0 login error:`, {
+      message: error.message,
+      stack: error.stack,
+    });
+
+    return res.json(errorResponse({
+      message: 'Authentication failed: Invalid Auth0 token.',
+    }));
+  }
+};
+
 const requireSignin = expressjwt({
   secret: config.jwtSecret,
   algorithms: ["HS256"],
@@ -244,4 +395,4 @@ const hasAuthorization = (req, res, next) => {
 };
 
 
-export default { signup, signin, signout, requireSignin, hasAuthorization, googleLogin };
+export default { signup, signin, signout, requireSignin, hasAuthorization, googleLogin, auth0Login };
