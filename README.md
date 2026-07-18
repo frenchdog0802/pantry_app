@@ -1,10 +1,10 @@
-# Pantry App (CookCopilot) — Web Frontend
+﻿# Pantry App (LarderMind) — Web Frontend
 
 > **Note:** This file is partially outdated. For accurate stack and run instructions, use the repo root [README.md](../../README.md) and [PROJECT_STATUS.md](../../PROJECT_STATUS.md).
 
 ## Overview
 
-**CookCopilot** web client — React + Vite SPA that talks to the Spring Boot backend.
+**LarderMind** web client — React + Vite SPA that talks to the Spring Boot backend.
 
 ## Quick run
 

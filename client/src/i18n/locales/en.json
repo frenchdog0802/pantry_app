@@ -32,7 +32,7 @@
     "shopping": "Shopping",
     "recipes": "Recipes",
     "settings": "Settings",
-    "tagline": "AI Kitchen Assistant"
+    "tagline": "An AI assistant that plans your meals from what's in your pantry."
   },
   "mealTypes": {
     "breakfast": "Breakfast",
@@ -55,9 +55,9 @@
     "11": "December"
   },
   "home": {
-    "heroSubtitle": "AI Kitchen Assistant",
+    "heroSubtitle": "An AI assistant that plans your meals from what's in your pantry.",
     "welcomeBack": "Welcome back, {{name}}",
-    "cookCta": "Cook with what I have",
+    "cookCta": "Ask AI assistant",
     "pantryCount": "{{count}} items in pantry",
     "buyCount": "{{count}} items to buy",
     "planMeals": "Plan your meals",
@@ -145,11 +145,16 @@
     "calendarView": "Calendar",
     "listView": "List",
     "didYouCook": "Did you cook {{name}}?",
-    "pendingConfirm": "Meals waiting for confirmation",
+    "pendingConfirm": "Did you cook these meals?",
+    "markCooked": "Mark cooked",
+    "didntCook": "Didn't cook",
+    "statusPending": "Waiting: did you cook this?",
+    "statusCooked": "Cooked",
+    "statusDidntCook": "Didn't cook",
     "recipeAdded": "Recipe added to calendar!",
-    "confirmed": "Confirmed: {{name}}. Pantry updated.",
-    "skipped": "Skipped: {{name}}. No pantry change.",
-    "shortage": "Meal confirmed, but pantry was short: {{summary}}{{extra}}. You can adjust stock in Pantry.",
+    "confirmed": "Marked cooked: {{name}}. Pantry updated.",
+    "skipped": "Marked didn't cook: {{name}}. No pantry change.",
+    "shortage": "Marked cooked, but pantry was short: {{summary}}{{extra}}. You can adjust stock in Pantry.",
     "andMore": " and {{count}} more",
     "selectRecipe": "Select Recipe",
     "searchRecipes": "Search recipes...",
@@ -193,6 +198,8 @@
   "recipes": {
     "title": "Recipe Manager",
     "categories": "Categories",
+    "folder": "Folder",
+    "backToCategories": "Back to categories",
     "searchPlaceholder": "Search recipes...",
     "addRecipe": "Add New Recipe",
     "empty": "No recipes found",
@@ -210,8 +217,6 @@
   },
   "ai": {
     "title": "AI Cooking Assistant",
-    "savedRecipes": "Saved Recipes",
-    "noSaved": "No saved recipes yet",
     "ingredients": "Ingredients",
     "instructions": "Instructions",
     "preferencesSaved": "Preferences saved",

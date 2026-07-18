@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeftIcon, PlusIcon, TrashIcon, SearchIcon, CalendarIcon, EditIcon, XIcon, ImageIcon, PackageIcon, FolderIcon, ChevronRightIcon, HomeIcon, MoreVerticalIcon, FolderPlusIcon, PencilIcon, AlertCircleIcon } from 'lucide-react';
+import { ArrowLeftIcon, PlusIcon, TrashIcon, SearchIcon, CalendarIcon, EditIcon, XIcon, ImageIcon, FolderIcon, ChevronRightIcon, HomeIcon, MoreVerticalIcon, FolderPlusIcon, PencilIcon, AlertCircleIcon } from 'lucide-react';
 import { usePantry } from '../contexts/pantryContext';
 import { IngredientEntry, Folder, Recipe } from '../api/types';
 import { ImageUploadApi } from '../api/ImageUploader';
@@ -406,31 +406,6 @@ export function RecipeManager({
     return ingredients.filter(item => item.name.toLowerCase().includes(query.toLowerCase()));
   };
 
-  // Add items from recipe to pantry
-  const handleAddItemsToPantry = (ingredients: IngredientEntry[]) => {
-    // Determine which items already exist and should be updated vs created
-    const nameToExisting = new Map(ingredients.map(p => [p.name.toLowerCase(), p]));
-
-    const itemsToUpdate = [] as typeof ingredients;
-    const itemsToCreate = [] as Array<Omit<typeof ingredients[number], 'id'>>;
-
-    ingredients.forEach(item => {
-      const key = item.name.toLowerCase();
-      const existing = nameToExisting.get(key);
-      if (existing) {
-        itemsToUpdate.push({
-          ...existing,
-        });
-      } else if (item.name.trim()) {
-        itemsToCreate.push({
-          name: item.name,
-          default_unit: item.default_unit || '',
-        });
-      }
-    });
-  };
-
-
   // Handle starting to add a recipe from a folder
   const handleAddRecipeInFolder = (folder: Folder) => {
     setNewRecipe({
@@ -440,11 +415,32 @@ export function RecipeManager({
     setShowAddRecipe(true);
   };
 
+  const handleNavigateBack = () => {
+    if (showAddRecipe) {
+      setShowAddRecipe(false);
+      return;
+    }
+    if (selectedRecipe) {
+      setSelectedRecipe(null);
+      setIsEditing(false);
+      return;
+    }
+    if (currentFolder) {
+      setCurrentFolder(null);
+      return;
+    }
+    onBack();
+  };
+
   return <div className="flex flex-col w-full min-h-screen bg-linen">
     <div className="flex-1 overflow-y-auto pb-20 lg:pb-6">
       {/* Page title */}
       <div className="max-w-6xl mx-auto px-6 lg:px-8 py-6 flex items-center gap-4">
-        <button onClick={onBack} className="lg:hidden p-2 rounded-lg text-muted hover:text-ink hover:bg-sage/50 transition-colors" aria-label={t('common.back')}>
+        <button
+          onClick={handleNavigateBack}
+          className={`p-2 rounded-lg text-muted hover:text-ink hover:bg-sage/50 transition-colors ${currentFolder || selectedRecipe || showAddRecipe ? '' : 'lg:hidden'}`}
+          aria-label={t('common.back')}
+        >
           <ArrowLeftIcon size={22} />
         </button>
         <h1 className="page-title animate-fade-in">{t('recipes.title')}</h1>
@@ -453,8 +449,18 @@ export function RecipeManager({
       <main className="flex-1 max-w-6xl mx-auto w-full px-6 lg:px-8 py-6">
         {!showAddRecipe && !selectedRecipe && recipesLoading && recipes.length === 0 ? <Loading /> : !showAddRecipe && !selectedRecipe ? <>
           {/* Breadcrumb Navigation */}
-          <div className="flex items-center mb-4 text-sm">
-            <button onClick={() => setCurrentFolder(null)} className="flex items-center text-muted hover:text-ink">
+          <div className="flex items-center mb-4 text-sm gap-1">
+            {currentFolder && (
+              <button
+                type="button"
+                onClick={() => setCurrentFolder(null)}
+                className="p-1.5 mr-1 rounded-lg text-muted hover:text-ink hover:bg-sage/50"
+                aria-label={t('recipes.backToCategories')}
+              >
+                <ArrowLeftIcon size={16} />
+              </button>
+            )}
+            <button type="button" onClick={() => setCurrentFolder(null)} className="flex items-center text-muted hover:text-ink">
               <HomeIcon size={16} className="mr-1" />
               <span>{t('recipes.categories')}</span>
             </button>
@@ -633,6 +639,21 @@ export function RecipeManager({
                       className="w-full p-3 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-herb/30 focus:border-transparent"
                     />
                   </div>
+                  <div>
+                    <label htmlFor="folder-edit" className="block text-ink mb-2">
+                      {t('recipes.folder')}
+                    </label>
+                    <select
+                      id="folder-edit"
+                      value={recipeFolderId(selectedRecipe)}
+                      onChange={e => setSelectedRecipe({ ...selectedRecipe, folder_id: e.target.value })}
+                      className="w-full p-3 border border-line rounded-xl bg-surface focus:outline-none focus:ring-2 focus:ring-herb/30 focus:border-transparent"
+                    >
+                      {(folders ?? []).map(folder => (
+                        <option key={folder.id} value={folder.id}>{folder.name}</option>
+                      ))}
+                    </select>
+                  </div>
                   {/* Recipe Image */}
                   <div>
                     <label className="block text-ink text-sm font-medium mb-1">
@@ -745,7 +766,9 @@ export function RecipeManager({
                       <h3 className="font-bold text-xl text-ink">
                         {selectedRecipe.meal_name}
                       </h3>
-                      {/* Fixed: Removed empty <p>&nbsp;</p> */}
+                      <p className="text-sm text-muted mt-1">
+                        {t('recipes.folder')}: {(folders ?? []).find(f => f.id === recipeFolderId(selectedRecipe))?.name ?? '—'}
+                      </p>
                     </div>
                   </div>
                   {hasRecipeImage(selectedRecipe) && <div className="rounded-xl overflow-hidden h-40 my-4">
@@ -796,24 +819,9 @@ export function RecipeManager({
                       if (!selectedRecipe) return;
                       setSelectedRecipe(toEditRecipe(selectedRecipe));
                       setIsEditing(true);
-                    }} className="w-1/2 bg-sage/50 text-herb border border-blue-100 py-2 rounded-lg flex items-center justify-center">
+                    }} className="w-full bg-sage/50 text-herb border border-blue-100 py-2 rounded-lg flex items-center justify-center">
                       <EditIcon size={16} className="mr-1" />
                       Edit Recipe
-                    </button>
-                    <button
-                      onClick={() =>
-                        handleAddItemsToPantry(
-                          selectedRecipe.ingredients.map((ingredient, idx) => ({
-                            id: `ingredient-${idx}-${Date.now()}`,
-                            name: ingredient.name,
-                            default_unit: ingredient.unit || '',
-                          }))
-                        )
-                      }
-                      className="w-1/2 bg-sage/50 text-herb border border-line py-2 rounded-lg flex items-center justify-center"
-                    >
-                      <PackageIcon size={16} className="mr-1" />
-                      Add to Pantry
                     </button>
                   </div>
                 </div>}
@@ -834,6 +842,21 @@ export function RecipeManager({
                     Meal Name
                   </label>
                   <input type="text" id="meal-name" value={newRecipe.meal_name} onChange={e => setNewRecipe({ ...newRecipe, meal_name: e.target.value })} placeholder="Enter what you cooked" className="w-full p-3 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-herb/30 focus:border-transparent" />
+                </div>
+                <div>
+                  <label htmlFor="folder-new" className="block text-ink mb-2">
+                    {t('recipes.folder')}
+                  </label>
+                  <select
+                    id="folder-new"
+                    value={newRecipe.folder_id || uncategorizedFolderId}
+                    onChange={e => setNewRecipe({ ...newRecipe, folder_id: e.target.value })}
+                    className="w-full p-3 border border-line rounded-xl bg-surface focus:outline-none focus:ring-2 focus:ring-herb/30 focus:border-transparent"
+                  >
+                    {(folders ?? []).map(folder => (
+                      <option key={folder.id} value={folder.id}>{folder.name}</option>
+                    ))}
+                  </select>
                 </div>
                 {/* Image Upload Section */}
                 <div>

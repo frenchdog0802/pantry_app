@@ -37,7 +37,6 @@ export function Settings({ onBack }: SettingsProps) {
   const { user, logout } = useAuth();
   const { userSettings, updateUserSettings } = usePantry();
   const [activeTab, setActiveTab] = useState('profile');
-  const [theme, setTheme] = useState('light');
   const [language, setLanguage] = useState<AppLanguage>(
     i18n.language?.startsWith('zh') ? 'zh' : 'en'
   );
@@ -354,28 +353,6 @@ export function Settings({ onBack }: SettingsProps) {
                       </label>
                     </div>
                   </div>
-                </div>
-
-                <div className="space-y-4 pt-2 border-t border-line">
-                  <h2 className="font-display text-xl font-semibold text-ink mb-4">{t('settings.themeSettings')}</h2>
-                  <div className="space-y-4">
-                    <div className="flex items-center">
-                      <input id="light" name="theme" type="radio" checked={theme === 'light'} onChange={() => setTheme('light')} className="h-4 w-4 text-herb border-line" />
-                      <label htmlFor="light" className="ml-3 block text-sm font-medium text-ink">{t('settings.lightMode')}</label>
-                    </div>
-                    <div className="flex items-center">
-                      <input id="dark" name="theme" type="radio" checked={theme === 'dark'} onChange={() => setTheme('dark')} className="h-4 w-4 text-herb border-line" />
-                      <label htmlFor="dark" className="ml-3 block text-sm font-medium text-ink">{t('settings.darkMode')}</label>
-                    </div>
-                    <div className="flex items-center">
-                      <input id="system" name="theme" type="radio" checked={theme === 'system'} onChange={() => setTheme('system')} className="h-4 w-4 text-herb border-line" />
-                      <label htmlFor="system" className="ml-3 block text-sm font-medium text-ink">{t('settings.systemDefault')}</label>
-                    </div>
-                  </div>
-                  <button onClick={handleSave} className="btn-primary flex items-center">
-                    <SaveIcon size={18} className="mr-2" />
-                    {t('common.save')}
-                  </button>
                 </div>
               </div>
             )}

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 import {
   ChefHatIcon,
   CalendarIcon,
@@ -38,7 +38,7 @@ export function Home({
     fetchAllPantryItems,
     fetchAllShoppingListItems
   } = usePantry();
-  const { user, loading } = useAuth();
+  const { user, initializing } = useAuth();
 
   useEffect(() => {
     if (!user) {
@@ -50,7 +50,7 @@ export function Home({
 
   const itemsToBuy = shoppingList.filter(item => !item.checked).length;
 
-  if (loading) {
+  if (initializing) {
     return (
       <div className="flex flex-col w-full min-h-screen bg-linen items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-2 border-line border-t-herb"></div>
@@ -84,7 +84,7 @@ export function Home({
         <div className="relative z-10 flex flex-col flex-1 max-w-6xl mx-auto w-full px-6 lg:px-8 pt-8 lg:pt-16 pb-8 justify-end">
           <div className="animate-fade-up">
             <h1 className="font-display text-4xl lg:text-5xl font-semibold text-ink tracking-tight">
-              CookCopilot
+              LarderMind
             </h1>
             <p className="mt-3 text-lg lg:text-xl text-ink/80 max-w-md">
               {t('home.heroSubtitle')}

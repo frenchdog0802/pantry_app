@@ -32,7 +32,7 @@
     "shopping": "購物",
     "recipes": "食譜",
     "settings": "設定",
-    "tagline": "AI 廚房助手"
+    "tagline": "AI 助手，依照冰箱裡的食材幫你規劃菜單。"
   },
   "mealTypes": {
     "breakfast": "早餐",
@@ -55,9 +55,9 @@
     "11": "十二月"
   },
   "home": {
-    "heroSubtitle": "AI 廚房助手",
+    "heroSubtitle": "AI 助手，依照冰箱裡的食材幫你規劃菜單。",
     "welcomeBack": "歡迎回來，{{name}}",
-    "cookCta": "用現有食材下廚",
+    "cookCta": "詢問 AI 助手",
     "pantryCount": "食材庫有 {{count}} 項",
     "buyCount": "待購 {{count}} 項",
     "planMeals": "規劃餐點",
@@ -145,11 +145,16 @@
     "calendarView": "月曆",
     "listView": "列表",
     "didYouCook": "你有做 {{name}} 嗎？",
-    "pendingConfirm": "待確認的餐點",
+    "pendingConfirm": "這些餐點有做嗎？",
+    "markCooked": "已烹調",
+    "didntCook": "沒做",
+    "statusPending": "待回報：有做嗎？",
+    "statusCooked": "已烹調",
+    "statusDidntCook": "沒做",
     "recipeAdded": "已將食譜加入行事曆！",
-    "confirmed": "已確認：{{name}}。食材庫已更新。",
-    "skipped": "已跳過：{{name}}。食材庫未變更。",
-    "shortage": "餐點已確認，但食材不足：{{summary}}{{extra}}。可至食材庫調整庫存。",
+    "confirmed": "已標記烹調：{{name}}。食材庫已更新。",
+    "skipped": "已標記沒做：{{name}}。食材庫未變更。",
+    "shortage": "已標記烹調，但食材不足：{{summary}}{{extra}}。可至食材庫調整庫存。",
     "andMore": " 及其他 {{count}} 項",
     "selectRecipe": "選擇食譜",
     "searchRecipes": "搜尋食譜...",
@@ -193,6 +198,8 @@
   "recipes": {
     "title": "食譜管理",
     "categories": "分類",
+    "folder": "資料夾",
+    "backToCategories": "返回分類",
     "searchPlaceholder": "搜尋食譜...",
     "addRecipe": "新增食譜",
     "empty": "找不到食譜",
@@ -210,8 +217,6 @@
   },
   "ai": {
     "title": "AI 烹飪助手",
-    "savedRecipes": "已儲存食譜",
-    "noSaved": "尚未儲存任何食譜",
     "ingredients": "食材",
     "instructions": "作法",
     "preferencesSaved": "偏好已儲存",

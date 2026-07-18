@@ -9,7 +9,8 @@ export interface AuthResponse {
 }
 interface AuthContextType {
   user: User | null;
-  loading: boolean;
+  /** True only while restoring session from storage on app boot. */
+  initializing: boolean;
   signUp: (user: User, password: string) => Promise<AuthResponse>;
   login: (email: string, password: string) => Promise<AuthResponse>;
   googleLogin: (googleAccessToken: string) => Promise<AuthResponse>;
@@ -23,7 +24,7 @@ export const AuthProvider: React.FC<{
   children
 }) => {
     const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [initializing, setInitializing] = useState(true);
 
     useEffect(() => {
       const checkAuth = () => {
@@ -43,7 +44,7 @@ export const AuthProvider: React.FC<{
           console.error('Auth check error:', error);
           localStorage.removeItem('user');
         } finally {
-          setLoading(false);
+          setInitializing(false);
         }
       };
 
@@ -51,7 +52,6 @@ export const AuthProvider: React.FC<{
     }, []);
 
     const signUp = async (user: User, password: string): Promise<ApiResponse> => {
-      setLoading(true);
       const authResponse: ApiResponse = { success: false };
       try {
         const response = await auth.signup(user, password);
@@ -68,13 +68,11 @@ export const AuthProvider: React.FC<{
         }
       } catch (error) {
         console.error('Error during sign up:', error);
-      } finally {
-        setLoading(false);
+        authResponse.message = 'Unable to reach the server. Make sure the backend is running.';
       }
       return authResponse;
     };
     const login = async (email: string, password: string): Promise<AuthResponse> => {
-      setLoading(true);
       const authResponse: AuthResponse = { success: false };
       try {
         const response = await auth.signin(email, password);
@@ -89,14 +87,12 @@ export const AuthProvider: React.FC<{
         }
       } catch (error) {
         console.error('Error logging in:', error);
-      } finally {
-        setLoading(false);
+        authResponse.message = 'Unable to reach the server. Make sure the backend is running.';
       }
       return authResponse;
     };
 
     const googleLogin = async (googleAccessToken: string): Promise<AuthResponse> => {
-      setLoading(true);
       const authResponse: AuthResponse = { success: false };
       try {
         const response = await auth.googleLogin(googleAccessToken);
@@ -111,9 +107,7 @@ export const AuthProvider: React.FC<{
         }
       } catch (error) {
         console.error('Error during Google login:', error);
-        authResponse.message = 'An error occurred during Google login';
-      } finally {
-        setLoading(false);
+        authResponse.message = 'Unable to reach the server. Make sure the backend is running.';
       }
       return authResponse;
     };
@@ -126,7 +120,7 @@ export const AuthProvider: React.FC<{
 
     const value = {
       user,
-      loading,
+      initializing,
       login,
       googleLogin,
       logout,

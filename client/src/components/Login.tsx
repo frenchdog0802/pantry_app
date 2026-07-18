@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { ChefHatIcon } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +15,8 @@ export function Login({ onSignUp, onLoginSuccess }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login, googleLogin, loading, isAuthenticated } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { login, googleLogin, isAuthenticated } = useAuth();
 
   React.useEffect(() => {
     if (isAuthenticated) {
@@ -26,6 +27,7 @@ export function Login({ onSignUp, onLoginSuccess }: LoginProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsSubmitting(true);
     try {
       const result = await login(email, password);
       if (result.success) {
@@ -35,12 +37,15 @@ export function Login({ onSignUp, onLoginSuccess }: LoginProps) {
       }
     } catch {
       setError(t('auth.genericError'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       setError('');
+      setIsSubmitting(true);
       try {
         const result = await googleLogin(tokenResponse.access_token);
         if (result.success) {
@@ -50,6 +55,8 @@ export function Login({ onSignUp, onLoginSuccess }: LoginProps) {
         }
       } catch {
         setError(t('auth.googleRetry'));
+      } finally {
+        setIsSubmitting(false);
       }
     },
     onError: () => {
@@ -66,11 +73,11 @@ export function Login({ onSignUp, onLoginSuccess }: LoginProps) {
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-herb mb-4">
                 <ChefHatIcon size={24} className="text-white" />
               </div>
-              <h1 className="font-display text-4xl font-semibold text-ink">CookCopilot</h1>
+              <h1 className="font-display text-4xl font-semibold text-ink">LarderMind</h1>
               <p className="text-muted mt-2">{t('auth.signInTitle')}</p>
             </div>
 
-            {loading ? (
+            {isSubmitting ? (
               <Loading />
             ) : (
               <>
@@ -124,7 +131,7 @@ export function Login({ onSignUp, onLoginSuccess }: LoginProps) {
                       {t('auth.forgotPassword')}
                     </a>
                   </div>
-                  <button type="submit" className="btn-primary w-full">
+                  <button type="submit" className="btn-primary w-full" disabled={isSubmitting}>
                     {t('auth.signIn')}
                   </button>
                 </form>
@@ -142,7 +149,8 @@ export function Login({ onSignUp, onLoginSuccess }: LoginProps) {
                   <button
                     type="button"
                     onClick={() => handleGoogleLogin()}
-                    className="w-full flex items-center justify-center py-2.5 px-4 border border-line rounded-lg bg-surface hover:bg-sage/30 transition-colors text-ink"
+                    disabled={isSubmitting}
+                    className="w-full flex items-center justify-center py-2.5 px-4 border border-line rounded-lg bg-surface hover:bg-sage/30 transition-colors text-ink disabled:opacity-50"
                   >
                     <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
                       <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">

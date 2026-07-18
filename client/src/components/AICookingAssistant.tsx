@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from 'react';
+﻿import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeftIcon, SendIcon, SaveIcon, RefreshCwIcon, ShoppingCartIcon, ChevronRightIcon, FolderIcon, XIcon, MessageSquareIcon, PlusCircleIcon } from 'lucide-react';
+import { ArrowLeftIcon, SendIcon, RefreshCwIcon, ShoppingCartIcon, ChevronRightIcon, XIcon, PlusCircleIcon } from 'lucide-react';
 import { usePantry } from '../contexts/pantryContext';
 import { chatApi, ChatResponse, HistoryMessage } from '../api/chat';
 import { mealPlanApi } from '../api/mealPlan';
@@ -105,29 +105,11 @@ export function AICookingAssistant({
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [showSavedRecipes, setShowSavedRecipes] = useState(false);
-  const [savedRecipes, setSavedRecipes] = useState<RecipeSuggestion[]>([]);
   const [suggestedRecipes, setSuggestedRecipes] = useState<RecipeSuggestion[]>([]);
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeSuggestion | null>(null);
   const [addingToMenuRecipeId, setAddingToMenuRecipeId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  // Load saved recipes from localStorage
-  useEffect(() => {
-    const savedRecipesData = localStorage.getItem('aiSavedRecipes');
-    if (savedRecipesData) {
-      try {
-        setSavedRecipes(JSON.parse(savedRecipesData));
-      } catch (error) {
-        console.error('Failed to parse saved recipes', error);
-        setSavedRecipes([]);
-      }
-    }
-  }, []);
-  // Save recipes to localStorage when they change
-  useEffect(() => {
-    localStorage.setItem('aiSavedRecipes', JSON.stringify(savedRecipes));
-  }, [savedRecipes]);
   // Load chat history on mount
   useEffect(() => {
     const loadHistory = async () => {
@@ -199,16 +181,33 @@ export function AICookingAssistant({
   const handleAddCreatedRecipeToMenu = async (recipeId: string) => {
     setAddingToMenuRecipeId(recipeId);
     try {
-      await mealPlanApi.create({ recipe_id: recipeId, meal_type: 'dinner' });
+      const servingDate = new Date().toISOString().slice(0, 10);
+      const response = await mealPlanApi.create({
+        recipe_id: recipeId,
+        meal_type: 'dinner',
+        serving_date: servingDate,
+      });
+      if (!response.success) {
+        throw new Error(response.message || "Failed to add recipe to today's dinner");
+      }
+      await Promise.all([fetchAllMealPlans(), fetchAllRecipes()]);
       const confirmationMessage: Message = {
         id: `confirmation-${Date.now()}`,
         role: 'assistant',
-        content: 'Recipe added to your dinner menu.',
+        content: `Added to today's dinner (${servingDate}). Open Calendar to see it — also filed under Dinner.`,
         timestamp: Date.now(),
       };
       setMessages(prev => [...prev, confirmationMessage]);
     } catch (error) {
-      console.error('Failed to add recipe to menu', error);
+      console.error("Failed to add recipe to today's dinner", error);
+      const errorMessage: Message = {
+        id: `error-${Date.now()}`,
+        role: 'assistant',
+        type: 'error',
+        content: "Could not add this recipe to today's dinner. Please try again.",
+        timestamp: Date.now(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setAddingToMenuRecipeId(null);
     }
@@ -269,7 +268,7 @@ export function AICookingAssistant({
             disabled={addingToMenuRecipeId === message.cardData?.recipeId}
             className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm disabled:opacity-60"
           >
-            Add to Menu
+            Add to today's dinner
           </button>
         </div>
       </div>
@@ -377,23 +376,6 @@ export function AICookingAssistant({
     // Generate response
     generateResponse(inputValue);
   };
-  // Handle saving a recipe
-  const handleSaveRecipe = (recipe: RecipeSuggestion) => {
-    const recipeWithTimestamp = {
-      ...recipe,
-      savedAt: Date.now(),
-      id: `saved-${Date.now()}`
-    };
-    setSavedRecipes(prev => [recipeWithTimestamp, ...prev]);
-    // Add confirmation message
-    const confirmationMessage: Message = {
-      id: `confirmation-${Date.now()}`,
-      role: 'assistant',
-      content: `I've saved "${recipe.mealName}" to your recipes collection.`,
-      timestamp: Date.now()
-    };
-    setMessages(prevMessages => [...prevMessages, confirmationMessage]);
-  };
   // Handle clearing the chat (UI + server history + AI memory)
   const handleClearChat = async () => {
     try {
@@ -405,10 +387,6 @@ export function AICookingAssistant({
     setSuggestedRecipes([]);
     setSelectedRecipe(null);
     setInputValue('');
-  };
-  // Handle removing a saved recipe
-  const handleRemoveSavedRecipe = (recipeId: string) => {
-    setSavedRecipes(prev => prev.filter(recipe => recipe.id !== recipeId));
   };
   // Handle adding a recipe to the cooking app
   const handleAddToRecipes = (recipe: RecipeSuggestion) => {
@@ -466,50 +444,11 @@ export function AICookingAssistant({
           >
             New chat
           </button>
-          <button onClick={() => setShowSavedRecipes(!showSavedRecipes)} className={`p-2 rounded-lg ${showSavedRecipes ? 'bg-sage text-herb' : 'text-muted hover:text-ink hover:bg-sage/50'} transition-colors`} aria-label={showSavedRecipes ? 'Show chat' : 'Show saved recipes'}>
-            {showSavedRecipes ? <MessageSquareIcon size={22} /> : <FolderIcon size={22} />}
-          </button>
         </div>
       </div>
       {/* Main Content */}
       <main className="flex-1 max-w-2xl mx-auto w-full px-6 lg:px-8 py-6 flex flex-col">
-        {showSavedRecipes /* Saved Recipes View */ ? <div className="bg-surface rounded-xl shadow-sm border border-line overflow-hidden flex-1">
-          <div className="p-4 border-b border-line bg-linen flex justify-between items-center">
-            <h2 className="font-semibold text-ink">{t('ai.savedRecipes')}</h2>
-            <button onClick={() => setShowSavedRecipes(false)} className="p-1 rounded-full hover:bg-sage/60" aria-label="Close">
-              <XIcon size={18} className="text-muted" />
-            </button>
-          </div>
-          {savedRecipes.length === 0 ? <div className="p-8 text-center text-muted">
-            <FolderIcon size={48} className="mx-auto mb-4 text-muted/40" />
-            <p>{t('ai.noSaved')}</p>
-            <p className="text-sm mt-2">
-              Ask the AI for recipe suggestions and save them here
-            </p>
-          </div> : <div className="divide-y divide-line">
-            {savedRecipes.map(recipe => <div key={recipe.id} className="p-4 hover:bg-linen">
-              <div className="flex justify-between">
-                <div className="flex-1 cursor-pointer" onClick={() => setSelectedRecipe(recipe)}>
-                  <h3 className="font-medium text-ink">
-                    {recipe.mealName}
-                  </h3>
-                  <p className="text-muted text-sm">
-                    {recipe.ingredients.length} ingredients ??Saved{' '}
-                    {new Date(recipe.savedAt || Date.now()).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="flex space-x-2">
-                  <button onClick={() => handleAddToRecipes(recipe)} className="p-1.5 rounded-full hover:bg-sage/50 text-herb" aria-label="Add to recipes" title="Add to recipes">
-                    <PlusCircleIcon size={18} />
-                  </button>
-                  <button onClick={() => handleRemoveSavedRecipe(recipe.id)} className="p-1.5 rounded-full hover:bg-sage/50 text-herb" aria-label="Remove recipe" title="Remove from saved">
-                    <XIcon size={18} />
-                  </button>
-                </div>
-              </div>
-            </div>)}
-          </div>}
-        </div> : selectedRecipe /* Recipe Detail View */ ? <div className="bg-surface rounded-xl shadow-sm border border-line overflow-hidden flex-1">
+        {selectedRecipe /* Recipe Detail View */ ? <div className="bg-surface rounded-xl shadow-sm border border-line overflow-hidden flex-1">
           <div className="p-4 border-b border-line bg-linen flex justify-between items-center">
             <h2 className="font-semibold text-ink">
               {selectedRecipe.mealName}
@@ -732,9 +671,6 @@ export function AICookingAssistant({
                             <button onClick={() => setSelectedRecipe(recipe)} className="p-1 rounded-full hover:bg-sage/60 text-muted" title="View recipe">
                               <ChevronRightIcon size={16} />
                             </button>
-                            <button onClick={() => handleSaveRecipe(recipe)} className="p-1 rounded-full hover:bg-sage/50 text-herb" title="Save recipe">
-                              <SaveIcon size={16} />
-                            </button>
                           </div>
                         </div>
                         {recipe.missingIngredient && <div className="flex items-center text-muted text-xs">
@@ -768,7 +704,7 @@ export function AICookingAssistant({
                       e.preventDefault();
                       handleSendMessage();
                     }
-                  }} placeholder="Ask CookCopilot to plan, import, or organize..." className="w-full py-3 px-4 pr-12 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-herb/30 focus:border-transparent" disabled={isTyping} />
+                  }} placeholder="Ask LarderMind to plan, import, or organize..." className="w-full py-3 px-4 pr-12 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-herb/30 focus:border-transparent" disabled={isTyping} />
                   <button onClick={handleSendMessage} disabled={!inputValue.trim() || isTyping} aria-label="Send message" className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 text-herb hover:text-herb-deep disabled:text-muted">
                     <SendIcon size={20} />
                   </button>

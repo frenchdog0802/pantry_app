@@ -1,4 +1,4 @@
-import {
+﻿import {
   BotMessageSquare,
   HomeIcon,
   CalendarIcon,
@@ -36,7 +36,7 @@ export function Sidebar({ activeView, onNavigate }: SidebarProps) {
             <ChefHatIcon size={20} className="text-white" />
           </div>
           <div>
-            <h1 className="font-display text-lg font-semibold text-ink leading-tight">CookCopilot</h1>
+            <h1 className="font-display text-lg font-semibold text-ink leading-tight">LarderMind</h1>
             <p className="text-[11px] text-muted leading-tight">{t('nav.tagline')}</p>
           </div>
         </div>
@@ -65,7 +65,7 @@ export function Sidebar({ activeView, onNavigate }: SidebarProps) {
       </nav>
 
       <div className="px-4 py-3 border-t border-line">
-        <p className="text-[11px] text-muted text-center">&copy; 2026 CookCopilot</p>
+        <p className="text-[11px] text-muted text-center">&copy; 2026 LarderMind</p>
       </div>
     </aside>
   );

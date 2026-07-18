@@ -1,4 +1,4 @@
-# CookCopilot Design System — Warm Kitchen
+﻿# LarderMind Design System — Warm Kitchen
 
 > **LOGIC:** When building a specific page, first check `design-system/pages/[page-name].md`.
 > If that file exists, its rules **override** this Master file.
@@ -6,7 +6,7 @@
 
 ---
 
-**Project:** CookCopilot  
+**Project:** LarderMind  
 **Mood:** Warm kitchen — cozy, calm, food-at-home (not terracotta cliché, not dark dashboard)  
 **Surfaces aligned:** Web app + landing page  
 **Not yet aligned:** Mobile app (`mobile`)
@@ -76,12 +76,12 @@ Defined in `src/index.css`:
 ## Layout Patterns
 
 ### App chrome
-- **Desktop:** Fixed sidebar (`Sidebar.tsx`) — CookCopilot wordmark, sage active nav.
+- **Desktop:** Fixed sidebar (`Sidebar.tsx`) — LarderMind wordmark, sage active nav.
 - **Mobile:** Bottom tab bar (`BottomNav.tsx`) — herb active color on linen bar.
 - **No** full-width orange/red gradient headers on authenticated screens. Use quiet `.page-title` in content column.
 
 ### Home (first viewport)
-1. CookCopilot brand (Fraunces)
+1. LarderMind brand (Fraunces)
 2. One line: "Plan dinner from what's already in your kitchen"
 3. Primary CTA: **Cook with what I have**
 4. Dominant kitchen/food image (edge-to-edge, not inset card)
@@ -102,7 +102,7 @@ Defined in `src/index.css`:
 ## Anti-patterns (do not use)
 
 - Orange→red gradients (`from-orange-500 to-red-600`)
-- ManageEat branding (use **CookCopilot**)
+- ManageEat branding (use **LarderMind**)
 - Dark slate dashboard palette with green CTA overrides
 - Card grids for every section (stats tiles, action tiles, nested cards)
 - Emoji as icons (use Lucide)

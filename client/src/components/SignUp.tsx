@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChefHatIcon } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -19,7 +19,8 @@ export function SignUp({ onSignUpSuccess, onLogin }: SignUpProps) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const { signUp, googleLogin, loading } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { signUp, googleLogin } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +31,7 @@ export function SignUp({ onSignUpSuccess, onLogin }: SignUpProps) {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const user = { first_name: firstName, last_name: lastName, email, name: `${firstName} ${lastName}` } as User;
       const response = await signUp(user, password);
@@ -40,12 +42,15 @@ export function SignUp({ onSignUpSuccess, onLogin }: SignUpProps) {
       }
     } catch {
       setError(t('auth.genericError'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleGoogleSignUp = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       setError('');
+      setIsSubmitting(true);
       try {
         const result = await googleLogin(tokenResponse.access_token);
         if (result.success) {
@@ -55,6 +60,8 @@ export function SignUp({ onSignUpSuccess, onLogin }: SignUpProps) {
         }
       } catch {
         setError(t('auth.googleSignUpRetry'));
+      } finally {
+        setIsSubmitting(false);
       }
     },
     onError: () => {
@@ -71,11 +78,11 @@ export function SignUp({ onSignUpSuccess, onLogin }: SignUpProps) {
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-herb mb-4">
                 <ChefHatIcon size={24} className="text-white" />
               </div>
-              <h1 className="font-display text-4xl font-semibold text-ink">CookCopilot</h1>
+              <h1 className="font-display text-4xl font-semibold text-ink">LarderMind</h1>
               <p className="text-muted mt-2">{t('auth.signUpTitle')}</p>
             </div>
 
-            {loading ? (
+            {isSubmitting ? (
               <Loading />
             ) : (
               <>
