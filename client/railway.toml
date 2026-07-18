@@ -1,8 +1,10 @@
-# Railway: set Root Directory to frontend/client
-# Build-time variables:
-#   VITE_API_BASE_URL = https://<your-backend>.up.railway.app
+# Railway: deploy THIS folder only (Root Directory = frontend/client)
+# Separate from backend — nginx serves static SPA only (no API proxy).
+#
+# Build-time variables (must be set before/at build):
+#   VITE_API_BASE_URL = https://<your-backend>.up.railway.app   (no trailing slash)
 #   VITE_GOOGLE_CLIENT_ID = (optional)
-# Also add your frontend origin to backend CORS_ALLOWED_ORIGINS.
+# After deploy: add this frontend origin to backend CORS_ALLOWED_ORIGINS + FRONTEND_URL.
 
 [build]
 builder = "DOCKERFILE"

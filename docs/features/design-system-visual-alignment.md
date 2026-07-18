@@ -1,7 +1,7 @@
 # Design System Visual Alignment
 
 ## Goal
-Align the frontend visual presentation with `client/design-system/cookcopilot/MASTER.md` while preserving all existing functional logic, state management, routing, and data-fetching behavior.
+Align the frontend visual presentation with `client/design-system/lardermind/MASTER.md` while preserving all existing functional logic, state management, routing, and data-fetching behavior.
 
 ## Scope
 - Applied global design tokens and theme remapping in `client/src/index.css`.

@@ -7,8 +7,9 @@ RUN npm ci
 
 COPY . .
 
-# Empty = browser calls same-origin /api (nginx proxies to backend).
-# For a separate Railway backend URL, set e.g. https://api.example.com
+# Empty = same-origin /api (local compose uses nginx.compose.conf to proxy).
+# Railway (separate services): set build var to backend public URL, e.g.
+#   VITE_API_BASE_URL=https://lardermind-api.up.railway.app
 ARG VITE_API_BASE_URL=
 ARG VITE_GOOGLE_CLIENT_ID=
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL

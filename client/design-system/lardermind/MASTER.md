@@ -1,4 +1,4 @@
-﻿# LarderMind Design System — Warm Kitchen
+# LarderMind Design System — Warm Kitchen
 
 > **LOGIC:** When building a specific page, first check `design-system/pages/[page-name].md`.
 > If that file exists, its rules **override** this Master file.
@@ -102,7 +102,7 @@ Defined in `src/index.css`:
 ## Anti-patterns (do not use)
 
 - Orange→red gradients (`from-orange-500 to-red-600`)
-- ManageEat branding (use **LarderMind**)
+- Legacy orange branding / orange→red headers (brand name is **LarderMind**)
 - Dark slate dashboard palette with green CTA overrides
 - Card grids for every section (stats tiles, action tiles, nested cards)
 - Emoji as icons (use Lucide)

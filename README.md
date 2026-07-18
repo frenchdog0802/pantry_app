@@ -1,4 +1,4 @@
-﻿# Pantry App (LarderMind) — Web Frontend
+# LarderMind — Web Frontend
 
 > **Note:** This file is partially outdated. For accurate stack and run instructions, use the repo root [README.md](../../README.md) and [PROJECT_STATUS.md](../../PROJECT_STATUS.md).
 
@@ -26,13 +26,13 @@ client/
 │   ├── api/                 REST client modules
 │   ├── components/          UI screens
 │   └── contexts/            authContext, pantryContext
-├── design-system/cookcopilot/MASTER.md
+├── design-system/lardermind/MASTER.md
 └── e2e/                     Playwright tests
 ```
 
 ## Design
 
-Warm Kitchen palette — see `client/design-system/cookcopilot/MASTER.md` and `client/src/index.css`.
+Warm Kitchen palette — see `client/design-system/lardermind/MASTER.md` and `client/src/index.css`.
 
 ## Tests
 

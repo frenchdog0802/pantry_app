@@ -1,6 +1,6 @@
 ﻿# Landing Hero — Page Override
 
-> Overrides [`MASTER.md`](../cookcopilot/MASTER.md) for the guest marketing landing.
+> Overrides [`MASTER.md`](../lardermind/MASTER.md) for the guest marketing landing.
 
 **Surface:** Guest-only (`MarketingLanding.tsx`) — shown when user is not authenticated.  
 **Not shown:** Authenticated app shell (sidebar, bottom nav).
@@ -82,7 +82,7 @@ Same content order as static landing:
 - Floating badges / stickers on hero media
 - Multiple accent colors
 - Inset or rounded hero image cards
-- Orange ManageEat branding
+- Orange legacy branding / orange→red headers
 - Sidebar or bottom nav on guest views
 
 ---

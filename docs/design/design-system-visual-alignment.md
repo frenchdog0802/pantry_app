@@ -1,7 +1,7 @@
 # Technical Design: Design System Visual Alignment
 
 **Feature reference:** [design-system-visual-alignment.md](../features/design-system-visual-alignment.md)  
-**Design system source:** [MASTER.md](../../client/design-system/cookcopilot/MASTER.md)  
+**Design system source:** [MASTER.md](../../client/design-system/lardermind/MASTER.md)  
 **Status:** Design  
 **Scope:** Frontend (Vite + React + Tailwind CSS)
 
@@ -9,7 +9,7 @@
 
 ## 1. Overview
 
-This design aligns the CookCopilot web frontend with the dark analytics palette and typography defined in `client/design-system/cookcopilot/MASTER.md`. The implementation is **CSS-only**: global design tokens, Tailwind utility remapping, and accessibility defaults live in a single stylesheet. Component logic, routing, API calls, hooks, and contexts are unchanged except for one anti-pattern fix in `AICookingAssistant`.
+This design aligns the LarderMind web frontend with the dark analytics palette and typography defined in `client/design-system/lardermind/MASTER.md`. The implementation is **CSS-only**: global design tokens, Tailwind utility remapping, and accessibility defaults live in a single stylesheet. Component logic, routing, API calls, hooks, and contexts are unchanged except for one anti-pattern fix in `AICookingAssistant`.
 
 ### Goals
 
