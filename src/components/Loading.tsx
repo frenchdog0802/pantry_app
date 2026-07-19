@@ -2,15 +2,21 @@ import { useTranslation } from 'react-i18next';
 
 interface LoadingProps {
   fullScreen?: boolean;
+  /** Smaller spinner for in-page placeholders (less jarring on mobile tab switches). */
+  compact?: boolean;
 }
 
-export function Loading({ fullScreen }: LoadingProps) {
+export function Loading({ fullScreen, compact }: LoadingProps) {
   const { t } = useTranslation();
+
+  const spinnerClass = compact
+    ? 'animate-spin rounded-full h-7 w-7 border-2 border-line border-t-herb mb-2'
+    : 'animate-spin rounded-full h-12 w-12 border-2 border-line border-t-herb mb-4';
 
   const content = (
     <>
-      <div className="animate-spin rounded-full h-12 w-12 border-2 border-line border-t-herb mb-4"></div>
-      <p className="text-muted text-sm">{t('common.loading')}</p>
+      <div className={spinnerClass} />
+      <p className={`text-muted ${compact ? 'text-xs' : 'text-sm'}`}>{t('common.loading')}</p>
     </>
   );
 
@@ -23,7 +29,7 @@ export function Loading({ fullScreen }: LoadingProps) {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center py-12">
+    <div className={`flex flex-col items-center justify-center ${compact ? 'py-8' : 'py-12'}`}>
       {content}
     </div>
   );

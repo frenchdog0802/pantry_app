@@ -447,7 +447,7 @@ export function RecipeManager({
       </div>
       {/* Main Content */}
       <main className="flex-1 max-w-6xl mx-auto w-full px-6 lg:px-8 py-6">
-        {!showAddRecipe && !selectedRecipe && recipesLoading && recipes.length === 0 ? <Loading /> : !showAddRecipe && !selectedRecipe ? <>
+        {!showAddRecipe && !selectedRecipe && recipesLoading && recipes.length === 0 ? <Loading compact /> : !showAddRecipe && !selectedRecipe ? <>
           {/* Breadcrumb Navigation */}
           <div className="flex items-center mb-4 text-sm gap-1">
             {currentFolder && (

@@ -22,8 +22,8 @@ export default {
         sans: ['"Source Sans 3"', 'system-ui', 'sans-serif'],
       },
       animation: {
-        'fade-up': 'fadeUp 0.6s ease-out forwards',
-        'fade-in': 'fadeIn 0.5s ease-out forwards',
+        'fade-up': 'fadeUp 0.28s ease-out forwards',
+        'fade-in': 'fadeIn 0.2s ease-out forwards',
       },
       keyframes: {
         fadeUp: {

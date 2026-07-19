@@ -122,12 +122,13 @@ export function AICookingAssistant({
     });
   }, [i18n.language, t]);
 
-  // Auto-grow composer like ChatGPT / Claude (caps at ~6 lines).
+  // Auto-grow composer; beyond the cap the field scrolls so typed text stays visible.
+  const COMPOSER_MAX_HEIGHT_PX = 240;
   useEffect(() => {
     const el = inputRef.current;
     if (!el) return;
     el.style.height = '0px';
-    el.style.height = `${Math.min(el.scrollHeight, 144)}px`;
+    el.style.height = `${Math.min(el.scrollHeight, COMPOSER_MAX_HEIGHT_PX)}px`;
   }, [inputValue]);
   // Load chat history on mount
   useEffect(() => {
@@ -733,7 +734,7 @@ export function AICookingAssistant({
                 <div className="relative flex-1 flex items-end rounded-[28px] border border-line bg-linen/60 focus-within:ring-2 focus-within:ring-herb/30 focus-within:border-transparent min-h-[56px]">
                   <textarea
                     ref={inputRef}
-                    rows={1}
+                    rows={2}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={(e) => {
@@ -743,7 +744,7 @@ export function AICookingAssistant({
                       }
                     }}
                     placeholder={t('ai.placeholder')}
-                    className="w-full resize-none bg-transparent py-3.5 pl-4 pr-14 text-base leading-snug text-ink placeholder:text-muted focus:outline-none disabled:opacity-60 max-h-36"
+                    className="w-full resize-none overflow-y-auto bg-transparent py-3.5 pl-4 pr-14 text-base leading-snug text-ink placeholder:text-muted focus:outline-none disabled:opacity-60 min-h-[56px] max-h-60"
                     disabled={isTyping}
                     aria-label={t('ai.placeholder')}
                   />

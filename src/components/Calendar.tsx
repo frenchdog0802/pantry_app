@@ -533,7 +533,7 @@ export function Calendar({
               </button>
             </div>
           </div>
-          {isInitialLoading ? <Loading /> : viewMode === 'calendar' && <>
+          {isInitialLoading ? <Loading compact /> : viewMode === 'calendar' && <>
             <div className="flex justify-between items-center">
               <button onClick={previousMonth} className="p-2 rounded-xl hover:bg-linen text-ink active:bg-sage/40 transition-colors" aria-label="Previous month">
                 <ChevronLeftIcon size={20} />
