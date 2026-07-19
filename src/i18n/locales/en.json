@@ -221,6 +221,27 @@
     "instructions": "Instructions",
     "preferencesSaved": "Preferences saved",
     "mealSuggestions": "Meal suggestions",
-    "placeholder": "Ask about cooking, meal plans, or recipes..."
+    "placeholder": "Ask about cooking, meal plans, or recipes...",
+    "welcome": "Hi! Tell me what you need — import a recipe URL, plan your week, update your pantry, or ask what you can cook. I'll handle it and show you what changed.",
+    "newChat": "New chat",
+    "suggestedPrompts": [
+      "What can I cook with what I have?",
+      "Plan dinners for the rest of this week",
+      "Import a recipe from a URL",
+      "Add chicken, rice, and broccoli to my pantry",
+      "Organize my pantry"
+    ],
+    "demoWelcome": "Hi! Tell me what you need — plan dinner from your pantry, import a recipe, or ask what you can cook. Try a prompt below.",
+    "demoSuggestedPrompts": [
+      "What can I cook with what I have?",
+      "Plan dinners for the rest of this week",
+      "Add chicken, rice, and broccoli to my pantry"
+    ],
+    "demoFallback": "Great question! Sign up free to get personalized answers based on your pantry, family preferences, and calendar.",
+    "demoResponses": {
+      "What can I cook with what I have?": "You have chicken breast, rice, broccoli, and soy sauce in your pantry. How about **Garlic Soy Chicken & Broccoli**? About 25 minutes — I only added garlic to your shopping list.",
+      "Plan dinners for the rest of this week": "Here's your plan — skipping spicy meals (Alex's preference) and using your expiring spinach:\n\n• Mon: Lemon herb chicken & rice\n• Tue: Spinach lasagna\n• Wed: Veggie stir-fry with tofu\n• Thu: Slow-cooker chili\n• Fri: Fish tacos (kid-friendly)\n\nAdded 6 items to your grocery list.",
+      "Add chicken, rice, and broccoli to my pantry": "Done — updated your pantry:\n\n• +2 lb chicken breast\n• +1 bag rice\n• +1 head broccoli\n\nI'll prioritize these in your next meal plan."
+    }
   }
 }

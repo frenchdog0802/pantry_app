@@ -1,4 +1,5 @@
-﻿import { useEffect, useRef, useState, type FormEvent } from 'react';
+﻿import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RefreshCwIcon, SendIcon } from 'lucide-react';
 
 interface DemoChatBoxProps {
@@ -15,29 +16,13 @@ interface DemoMessage {
   content: string;
 }
 
-const WELCOME_MESSAGE: DemoMessage = {
-  id: 'welcome',
-  role: 'assistant',
-  content:
-    'Hi! Tell me what you need — plan dinner from your pantry, import a recipe, or ask what you can cook. Try a prompt below.',
-};
-
-const SUGGESTED_PROMPTS = [
-  'What can I cook with what I have?',
-  'Plan dinners for the rest of this week',
-  'Add chicken, rice, and broccoli to my pantry',
-];
-
-const DEMO_RESPONSES: Record<string, string> = {
-  'What can I cook with what I have?':
-    'You have chicken breast, rice, broccoli, and soy sauce in your pantry. How about **Garlic Soy Chicken & Broccoli**? About 25 minutes — I only added garlic to your shopping list.',
-  'Plan dinners for the rest of this week':
-    'Here\'s your plan — skipping spicy meals (Alex\'s preference) and using your expiring spinach:\n\n• Mon: Lemon herb chicken & rice\n• Tue: Spinach lasagna\n• Wed: Veggie stir-fry with tofu\n• Thu: Slow-cooker chili\n• Fri: Fish tacos (kid-friendly)\n\nAdded 6 items to your grocery list.',
-  'Add chicken, rice, and broccoli to my pantry':
-    'Done — updated your pantry:\n\n• +2 lb chicken breast\n• +1 bag rice\n• +1 head broccoli\n\nI\'ll prioritize these in your next meal plan.',
-};
-
-const AUTO_PLAY_PROMPT = SUGGESTED_PROMPTS[0];
+function buildWelcome(content: string): DemoMessage {
+  return {
+    id: 'welcome',
+    role: 'assistant',
+    content,
+  };
+}
 
 function renderContent(content: string, variant: 'user' | 'assistant') {
   const parts = content.split(/(\*\*[^*]+\*\*)/g);
@@ -66,12 +51,29 @@ export function DemoChatBox({
   size = 'default',
   className = '',
 }: DemoChatBoxProps) {
-  const [messages, setMessages] = useState<DemoMessage[]>([WELCOME_MESSAGE]);
+  const { t, i18n } = useTranslation();
+  const [messages, setMessages] = useState<DemoMessage[]>(() => [
+    buildWelcome(t('ai.demoWelcome')),
+  ]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [hasAutoPlayed, setHasAutoPlayed] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const suggestedPrompts = useMemo(() => {
+    const prompts = t('ai.demoSuggestedPrompts', { returnObjects: true });
+    return Array.isArray(prompts) ? (prompts as string[]) : [];
+  }, [t, i18n.language]);
+
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].id === 'welcome') {
+        return [buildWelcome(t('ai.demoWelcome'))];
+      }
+      return prev;
+    });
+  }, [i18n.language, t]);
 
   useEffect(() => {
     const container = messagesContainerRef.current;
@@ -97,9 +99,12 @@ export function DemoChatBox({
 
     await new Promise((resolve) => window.setTimeout(resolve, 900));
 
-    const response =
-      DEMO_RESPONSES[trimmed] ??
-      'Great question! Sign up free to get personalized answers based on your pantry, family preferences, and calendar.';
+    const responses = t('ai.demoResponses', { returnObjects: true });
+    const responseMap =
+      responses && typeof responses === 'object' && !Array.isArray(responses)
+        ? (responses as Record<string, string>)
+        : {};
+    const response = responseMap[trimmed] ?? t('ai.demoFallback');
 
     const assistantMessage: DemoMessage = {
       id: `assistant-${Date.now()}`,
@@ -112,7 +117,7 @@ export function DemoChatBox({
   };
 
   useEffect(() => {
-    if (!autoPlay || hasAutoPlayed) return;
+    if (!autoPlay || hasAutoPlayed || suggestedPrompts.length === 0) return;
 
     const element = containerRef.current;
     if (!element) return;
@@ -122,7 +127,7 @@ export function DemoChatBox({
         if (entry.isIntersecting && !hasAutoPlayed) {
           setHasAutoPlayed(true);
           window.setTimeout(() => {
-            void runExchange(AUTO_PLAY_PROMPT);
+            void runExchange(suggestedPrompts[0]);
           }, 1200);
           observer.disconnect();
         }
@@ -133,7 +138,7 @@ export function DemoChatBox({
     observer.observe(element);
     return () => observer.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once when section enters view
-  }, [autoPlay, hasAutoPlayed]);
+  }, [autoPlay, hasAutoPlayed, suggestedPrompts]);
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -141,7 +146,7 @@ export function DemoChatBox({
   };
 
   const handleReset = () => {
-    setMessages([WELCOME_MESSAGE]);
+    setMessages([buildWelcome(t('ai.demoWelcome'))]);
     setInputValue('');
     setIsTyping(false);
   };
@@ -216,7 +221,7 @@ export function DemoChatBox({
                 type="text"
                 value={inputValue}
                 onChange={(event) => setInputValue(event.target.value)}
-                placeholder="Ask LarderMind to plan, import, or organize..."
+                placeholder={t('ai.placeholder')}
                 className="w-full rounded-xl border border-line px-4 py-2.5 pr-11 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-herb/30"
                 disabled={isTyping}
               />
@@ -232,7 +237,7 @@ export function DemoChatBox({
           </div>
 
           <div className="mt-2 flex flex-wrap gap-2">
-            {SUGGESTED_PROMPTS.map((prompt) => (
+            {suggestedPrompts.map((prompt) => (
               <button
                 key={prompt}
                 type="button"
@@ -250,11 +255,11 @@ export function DemoChatBox({
             <button
               type="button"
               onClick={onGetStarted}
-              className="font-medium text-herb underline hover:text-herb-deep"
+              className="font-medium text-herb underline-offset-2 hover:underline"
             >
-              Get started
+              Sign up free
             </button>{' '}
-            for real pantry-aware answers.
+            for the real assistant.
           </p>
         </form>
       </div>

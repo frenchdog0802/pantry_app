@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useRef } from 'react';
+﻿import { useEffect, useState, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeftIcon, SendIcon, RefreshCwIcon, ShoppingCartIcon, ChevronRightIcon, XIcon, PlusCircleIcon } from 'lucide-react';
 import { usePantry } from '../contexts/pantryContext';
@@ -71,20 +71,14 @@ interface Message {
   statusText?: string;
 }
 
-const WELCOME_MESSAGE: Message = {
-  id: 'welcome',
-  role: 'assistant',
-  content: 'Hi! Tell me what you need — import a recipe URL, plan your week, update your pantry, or ask what you can cook. I\'ll handle it and show you what changed.',
-  timestamp: Date.now(),
-};
-
-const SUGGESTED_PROMPTS = [
-  'What can I cook with what I have?',
-  'Plan dinners for the rest of this week',
-  'Import a recipe from a URL',
-  'Add chicken, rice, and broccoli to my pantry',
-  'Organize my pantry',
-];
+function buildWelcomeMessage(content: string): Message {
+  return {
+    id: 'welcome',
+    role: 'assistant',
+    content,
+    timestamp: Date.now(),
+  };
+}
 
 export function AICookingAssistant({
   isActive = true,
@@ -94,7 +88,7 @@ export function AICookingAssistant({
   onViewCalendar,
   onViewPantry,
 }: AICookingAssistantProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const {
     addRecipe,
     fetchAllRecipes,
@@ -102,7 +96,9 @@ export function AICookingAssistant({
     fetchAllPantryItems,
     fetchAllMealPlans,
   } = usePantry();
-  const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
+  const [messages, setMessages] = useState<Message[]>(() => [
+    buildWelcomeMessage(t('ai.welcome')),
+  ]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [suggestedRecipes, setSuggestedRecipes] = useState<RecipeSuggestion[]>([]);
@@ -110,6 +106,21 @@ export function AICookingAssistant({
   const [addingToMenuRecipeId, setAddingToMenuRecipeId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const suggestedPrompts = useMemo(() => {
+    const prompts = t('ai.suggestedPrompts', { returnObjects: true });
+    return Array.isArray(prompts) ? (prompts as string[]) : [];
+  }, [t, i18n.language]);
+
+  // Keep the greeting in sync with UI language while the chat is still at welcome-only.
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].id === 'welcome') {
+        return [buildWelcomeMessage(t('ai.welcome'))];
+      }
+      return prev;
+    });
+  }, [i18n.language, t]);
   // Load chat history on mount
   useEffect(() => {
     const loadHistory = async () => {
@@ -383,7 +394,7 @@ export function AICookingAssistant({
     } catch (error) {
       console.error('Failed to clear chat history', error);
     }
-    setMessages([WELCOME_MESSAGE]);
+    setMessages([buildWelcomeMessage(t('ai.welcome'))]);
     setSuggestedRecipes([]);
     setSelectedRecipe(null);
     setInputValue('');
@@ -442,7 +453,7 @@ export function AICookingAssistant({
             title="New chat"
             aria-label="Start a new chat"
           >
-            New chat
+            {t('ai.newChat')}
           </button>
         </div>
       </div>
@@ -462,7 +473,7 @@ export function AICookingAssistant({
               <img src={selectedRecipe.image} alt={selectedRecipe.mealName} className="w-full h-full object-cover" />
             </div>}
             <div className="mb-6">
-              <h3 className="font-medium text-ink mb-2">Ingredients</h3>
+              <h3 className="font-medium text-ink mb-2">{t('ai.ingredients')}</h3>
               <ul className="space-y-2">
                 {selectedRecipe.ingredients.map((ingredient: any, index: number) => <li key={index} className="flex items-center">
                   <div className="w-2 h-2 rounded-full bg-herb mr-2"></div>
@@ -474,7 +485,7 @@ export function AICookingAssistant({
               </ul>
             </div>
             <div className="mb-6">
-              <h3 className="font-medium text-ink mb-2">Instructions</h3>
+              <h3 className="font-medium text-ink mb-2">{t('ai.instructions')}</h3>
               <ol className="space-y-3">
                 {selectedRecipe.instructions.map((step: string, index: number) => <li key={index} className="flex">
                   <div className="bg-sage rounded-full w-6 h-6 flex items-center justify-center text-herb-deep font-medium mr-3 flex-shrink-0 mt-0.5">
@@ -704,14 +715,14 @@ export function AICookingAssistant({
                       e.preventDefault();
                       handleSendMessage();
                     }
-                  }} placeholder="Ask LarderMind to plan, import, or organize..." className="w-full py-3 px-4 pr-12 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-herb/30 focus:border-transparent" disabled={isTyping} />
+                  }} placeholder={t('ai.placeholder')} className="w-full py-3 px-4 pr-12 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-herb/30 focus:border-transparent" disabled={isTyping} />
                   <button onClick={handleSendMessage} disabled={!inputValue.trim() || isTyping} aria-label="Send message" className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 text-herb hover:text-herb-deep disabled:text-muted">
                     <SendIcon size={20} />
                   </button>
                 </div>
               </div>
               <div className="mt-2 flex flex-wrap gap-2 justify-center">
-                {SUGGESTED_PROMPTS.map((prompt) => (
+                {suggestedPrompts.map((prompt) => (
                   <button key={prompt} onClick={() => setInputValue(prompt)} className="text-xs bg-sage/40 hover:bg-sage/60 text-ink px-3 py-1 rounded-full">
                     {prompt}
                   </button>
