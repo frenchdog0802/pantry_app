@@ -105,7 +105,7 @@ export function AICookingAssistant({
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeSuggestion | null>(null);
   const [addingToMenuRecipeId, setAddingToMenuRecipeId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const suggestedPrompts = useMemo(() => {
     const prompts = t('ai.suggestedPrompts', { returnObjects: true });
@@ -121,6 +121,14 @@ export function AICookingAssistant({
       return prev;
     });
   }, [i18n.language, t]);
+
+  // Auto-grow composer like ChatGPT / Claude (caps at ~6 lines).
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = '0px';
+    el.style.height = `${Math.min(el.scrollHeight, 144)}px`;
+  }, [inputValue]);
   // Load chat history on mount
   useEffect(() => {
     const loadHistory = async () => {
@@ -697,36 +705,68 @@ export function AICookingAssistant({
                 <div ref={messagesEndRef} />
               </div>
             </div>
-            {/* Input Area */}
-            <div className="border-t border-line p-4">
-              <div className="flex items-center gap-2">
+            {/* Input Area — ChatGPT / Claude-style composer */}
+            <div className="border-t border-line bg-surface px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-4">
+              <div className="mb-3 flex gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:justify-center sm:overflow-visible">
+                {suggestedPrompts.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => setInputValue(prompt)}
+                    className="shrink-0 text-sm sm:text-xs bg-sage/40 hover:bg-sage/60 text-ink px-3.5 py-2 sm:py-1 rounded-full"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-end gap-2">
                 <button
+                  type="button"
                   onClick={handleClearChat}
                   disabled={isTyping}
-                  className="p-2 text-muted hover:text-ink hover:bg-sage/50 rounded-full disabled:opacity-50"
+                  className="mb-1.5 hidden sm:inline-flex p-2.5 text-muted hover:text-ink hover:bg-sage/50 rounded-full disabled:opacity-50"
                   title="New chat"
                   aria-label="Start a new chat"
                 >
                   <RefreshCwIcon size={20} />
                 </button>
-                <div className="relative flex-1">
-                  <input ref={inputRef} type="text" value={inputValue} onChange={e => setInputValue(e.target.value)} onKeyDown={e => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }} placeholder={t('ai.placeholder')} className="w-full py-3 px-4 pr-12 border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-herb/30 focus:border-transparent" disabled={isTyping} />
-                  <button onClick={handleSendMessage} disabled={!inputValue.trim() || isTyping} aria-label="Send message" className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 text-herb hover:text-herb-deep disabled:text-muted">
+                <div className="relative flex-1 flex items-end rounded-[28px] border border-line bg-linen/60 focus-within:ring-2 focus-within:ring-herb/30 focus-within:border-transparent min-h-[56px]">
+                  <textarea
+                    ref={inputRef}
+                    rows={1}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    placeholder={t('ai.placeholder')}
+                    className="w-full resize-none bg-transparent py-3.5 pl-4 pr-14 text-base leading-snug text-ink placeholder:text-muted focus:outline-none disabled:opacity-60 max-h-36"
+                    disabled={isTyping}
+                    aria-label={t('ai.placeholder')}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSendMessage}
+                    disabled={!inputValue.trim() || isTyping}
+                    aria-label="Send message"
+                    className="absolute right-2 bottom-2 flex h-11 w-11 items-center justify-center rounded-full bg-herb text-white hover:bg-herb-deep disabled:bg-sage/60 disabled:text-muted transition-colors"
+                  >
                     <SendIcon size={20} />
                   </button>
                 </div>
               </div>
-              <div className="mt-2 flex flex-wrap gap-2 justify-center">
-                {suggestedPrompts.map((prompt) => (
-                  <button key={prompt} onClick={() => setInputValue(prompt)} className="text-xs bg-sage/40 hover:bg-sage/60 text-ink px-3 py-1 rounded-full">
-                    {prompt}
-                  </button>
-                ))}
+              <div className="mt-2 flex sm:hidden justify-center">
+                <button
+                  type="button"
+                  onClick={handleClearChat}
+                  disabled={isTyping}
+                  className="text-xs text-muted hover:text-ink disabled:opacity-50 px-2 py-1"
+                >
+                  New chat
+                </button>
               </div>
             </div>
           </div>
